@@ -3,6 +3,7 @@ function [A,f] = assemble(points,triangle,fun,num_of_nodes,option,u_S)
 %   Detailed explanation goes here
 
 
+
 %% neue Zuordnung: Dreicke <-> Mittelpunkte
 [midpoints,midtriangle] = midpoints_of_triangle(triangle,points);
 
@@ -12,9 +13,6 @@ nt = size(triangle,2);
 nmp = size(midpoints,2);
 fl = zeros(3,1);
 
-if nargin == 5
-    u_S = zeros(np,1);
-end
 
 %% Beginn der Assemblierung:
 switch lower(option)

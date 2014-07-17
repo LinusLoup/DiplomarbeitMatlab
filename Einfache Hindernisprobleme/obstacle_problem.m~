@@ -113,7 +113,7 @@ for i = 1 : l_bound_ind
     end
 end
 
-% Assemblierung der Matrix mit den Bubble-Fktn. und ASM:
+% Assemblie
 [A_Q,rho_s] = assemble(p,t,fun,7,'bubble');
 eps_V = quadprog(A_Q,-rho_s,[],[],H_Q,R,z_obs_midpoints-u_S_mid,[]);
 

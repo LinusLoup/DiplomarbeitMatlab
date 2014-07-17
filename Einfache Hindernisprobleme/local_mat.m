@@ -12,6 +12,7 @@ function [J,S] = local_mat(points,options)
 x = points(1,:);
 y = points(2,:);
 
+
 %% Funktionaldeterminante und weitere Transformationsfaktoren, um vom 
 %% Referenzelement auf ein lokales Dreieck T mit Ecken (x1,y1),(x2,y2),
 %% (x3,y3) zu transformieren:
@@ -19,6 +20,12 @@ J = (x(2)-x(1))*(y(3)-y(1)) - (x(3)-x(1))*(y(2)-y(1));
 a = ((x(3)-x(1))^2 + (y(3)-y(1))^2);
 b = -((y(2)-y(1))*(y(3)-y(1)) + (x(2)-x(1))*(x(3)-x(1)));
 c = ((x(2)-x(1))^2 + (y(2)-y(1))^2);
+
+
+%% Berechnung von grad_u:
+grad_u = 1/J * ([y(3)-y(1), y(1)-y(2); x(1)-x(3), x(2)-x(1)]*[z(2)-z(1);...
+    z(3)-z(1)])';
+
 
 switch lower(options)
     case {'linear'}
@@ -35,6 +42,8 @@ switch lower(options)
                           c,    -a-c, a+b+c ];
                   
     S = diag(diag(S_quad));
+    %S = S_quad;
+    
     
     otherwise
         error('Unknown option');
