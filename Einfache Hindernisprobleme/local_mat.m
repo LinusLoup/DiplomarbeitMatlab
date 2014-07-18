@@ -22,11 +22,6 @@ b = -((y(2)-y(1))*(y(3)-y(1)) + (x(2)-x(1))*(x(3)-x(1)));
 c = ((x(2)-x(1))^2 + (y(2)-y(1))^2);
 
 
-%% Berechnung von grad_u:
-grad_u = 1/J * ([y(3)-y(1), y(1)-y(2); x(1)-x(3), x(2)-x(1)]*[z(2)-z(1);...
-    z(3)-z(1)])';
-
-
 switch lower(options)
     case {'linear'}
     %% lokale Steifigkeitsmatrix für lin. Ansatz auf einem Dreieck T der 

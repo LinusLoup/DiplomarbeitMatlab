@@ -1,14 +1,12 @@
-function obstacle_problem
-
 %% Laden der Geometriedaten:
 %data = load('mycircle.mat');
 data = load('mysquare.mat');
 
 %% Lastfunktion f:
 %fun = @(x,y) zeros(1,length(x));
-%fun = @(x,y) -3*ones(1,length(x));
+fun = @(x,y) -3*ones(1,length(x));
 %fun = @(x,y) 5*(-x.^2-y.^2);
-fun = @(x,y) -3*x.^2-10*y.^2;
+%fun = @(x,y) -3*x.^2-10*y.^2;
 
 
 %% Gitterinitialisierung mit Plot:
@@ -18,6 +16,8 @@ h = 2;
 %[p,e,t] = refinemesh(data.mycircleg,p,e,t);
 
 [p,e,t] = initmesh(data.mysquareg,'Hmax',h);
+%[p,e,t] = refinemesh(data.mysquareg,p,e,t);
+%[p,e,t] = refinemesh(data.mysquareg,p,e,t);
 subplot(3,3,1);pdemesh(p,e,t);
 ntri = size(t,2);
 np = size(p,2);
@@ -50,14 +50,14 @@ for i = 1 : length(midpoints)
 end
 
 
-%% Berechnung der z-Werte vom Hindernis für Plot und mit den Gitterpunkten:
+%% Berechnung der z-Werte vom Hindernis für Plot, sowie mit den Gitter- 
+%% und Mittelpunkten:
 [x,y] = meshgrid(-1:0.1:1,-1:0.1:1);
 z_obs = -x.^2-y.^2+0.3;
 subplot(3,3,3);surf(x,y,z_obs);
 
 z_obs_prob = (-p(1,:).^2-p(2,:).^2+0.3)';
 z_obs_midpoints = (-midpoints(1,:).^2-midpoints(2,:).^2+0.3)';
-
 
 
 tic
@@ -114,12 +114,28 @@ for i = 1 : l_bound_ind
 end
 
 % Assemblierung der Matrix mit den Bubble-Fktn. und ASM:
-[A_Q,rho_s] = assemble(p,t,fun,7,'bubble');
+[A_Q,rho_s] = assemble(p,t,fun,7,'bubble',u_S);
 eps_V = quadprog(A_Q,-rho_s,[],[],H_Q,R,z_obs_midpoints-u_S_mid,[]);
 
-eps_V
-
 toc
+
+
+% Vergleich der ASM mit dem projektiven Jacobi-Verfahren:
+non_bound_ind = find(prod(H_Q == zeros(size(H_Q))));
+ind_length = length(non_bound_ind);
+
+A_dirichlet_Q = A_Q(non_bound_ind,non_bound_ind);
+f_dirichlet_Q = rho_s(non_bound_ind);
+
+eps_V_jac = projected_jacobi(A_dirichlet_Q,f_dirichlet_Q,...
+    z_obs_midpoints(non_bound_ind)-u_S_mid(non_bound_ind),...
+    rand(ind_length,1),1e-15);
+eps_V_jac = dirichlet_boundary(eps_V_jac,H_Q,R);
+
+
+% Probe durch exakte Lösung:
+
+
 
 %% Plot der Lösungen mit Active-Set-Methode & projiziertem Jacobi-Verfahren:
 subplot(3,3,[4,5,6]); pdeplot(p,e,t,'zdata',u_quadprog);
@@ -181,4 +197,3 @@ disp(['Determinante = ' num2str(detA)]);
 %1/2*u_quadprog'*A*u_quadprog - f'*u_quadprog
 %1/2*u_jacobi'*A*u_jacobi - f'*u_jacobi
 % 1/2*u_ana'*A*u_ana
-end

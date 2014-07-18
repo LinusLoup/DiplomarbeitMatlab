@@ -1,7 +1,6 @@
 function grad_u = gradu(points,zvalues)
 %GRADU berechnet für gegebene (x,y,z)-Werte den Gradienten der Funktion
-%u=a*x+b*y+c, d.h. grad u=(a,b).
-
+%z=a*x+b*y+c, d.h. 
 
 %% x- und y-Werte der Punkte:
 x = points(1,:);
