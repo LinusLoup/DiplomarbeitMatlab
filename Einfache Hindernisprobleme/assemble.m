@@ -10,15 +10,11 @@ function [A,f] = assemble(points,triangle,fun,num_of_nodes,option,u_S)
 np = size(points,2);
 nt = size(triangle,2);
 nmp = size(midpoints,2);
-fl = zeros(3,1);
 
 if nargin == 5
     u_S = zeros(np,1);
 end
 
-%% Gradient der quadratischen Bubble-Funktionen auf Referenzelement:
-dxi_bubble = @(xi,eta) [4-8*xi-4*eta; 4*eta;-4*eta];
-deta_bubble = @(xi,eta) [-4*xi; 4*xi; 4-4*xi-8*eta];
 
 %% Beginn der Assemblierung:
 switch lower(option)
@@ -48,27 +44,22 @@ for i = 1:nt
     tri = triangle(1:3,i);
     poi = points(:,tri);
     midtri = midtriangle(:,i);
+    u_S_loc = u_S(tri);
     
     %% Berechnung der lok.,lin. Steifigkeitsmatrix und der Fkt.-Determinante:
-    [J,S] = local_mat(poi,option);
-    
-    %% Gradient von u_S:
-    gradu_S = gradu(poi,u_S(tri));
+    [S,fl,J] = local_mat(poi,u_S_loc,option);
         
     %% Berechnung des lokalen Vektors fl:
     % Quadraturformeln von https://www-user.tu-chemnitz.de/~rens/lehre/...
     % archiv/numerik1_11SS/folien/gaussxd.pdf
     [wi,gauss,ansatz_values] = quad_tri(poi,hat,num_of_nodes);
-    [~,~,ansatz_dxi_val] = quad_tri(poi,dxi_bubble,num_of_nodes);
-    [~,~,ansatz_deta_val] = quad_tri(poi,deta_bubble,num_of_nodes);
             
     %Quadratur auf Dreieck:
     for k = 1:3
-        fl(k) = sum(wi.*fun(gauss(1,:),gauss(2,:)).*ansatz_values(k,:))-...
-            sum(wi.*(gradu_S(1)*ansatz_dxi_val(k,:)+gradu_S(2)*...
-            ansatz_deta_val(k,:)));
+        fl(k) = fl(k)+J*sum(wi.*fun(gauss(1,:),gauss(2,:)).*...
+            ansatz_values(k,:));
     end
-    fl = fl*J              %Multiplikation der Fkt.Det. wegen Trafo
+
     
     switch lower(option)
         case {'linear'}

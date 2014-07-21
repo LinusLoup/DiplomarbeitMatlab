@@ -69,17 +69,17 @@ tic
 [~,~,H,R]=assemb(data.mysquareb,p,e);
 
 
-%% Lösung der Variationsungleichung mit Active-Set- und Jacobi-Verfahren:
-% Active-Set-Methode:
-[u_quadprog,fval] = quadprog(A,-f,[],[],H,R,z_obs_prob,[]);
-
-
-% Eliminieren von Dirichletpunkten aus der Matrix für das Jacobi-Verfahren:
+%% Eliminieren von Dirichletpunkten aus der Matrix für das Jacobi-Verfahren:
 non_bound_ind = find(prod(H == zeros(size(H))));
 ind_length = length(non_bound_ind);
 
+
 A_dirichlet = A(non_bound_ind,non_bound_ind);
 f_dirichlet = f(non_bound_ind);
+
+%% Lösung der Variationsungleichung mit Active-Set- und Jacobi-Verfahren:
+% Active-Set-Methode:
+[u_quadprog,fval] = quadprog(A,-f,[],[],H,R,z_obs_prob,[]);
 
 % projeziertes Jacobi-Verfahren:
 uu = projected_jacobi(A_dirichlet,f_dirichlet,z_obs_prob(non_bound_ind),...
@@ -126,7 +126,7 @@ eps_V_jac = projected_jacobi(A_Q,rho_s,z_obs_midpoints-u_S_mid,...
 
 
 % Probe durch exakte Lösung laut (2.10):
-[eps_V_exact,a_phi] = exact_defect(p,t,midtri,rho_s,u_S_mid,z_obs_midpoints);
+eps_V_exact = exact_defect(p,t,midtri,;
 
 err_eps_V_quad = norm(eps_V-eps_V_exact);
 err_eps_V_jac = norm(eps_V_jac-eps_V_exact);
