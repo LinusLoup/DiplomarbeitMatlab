@@ -6,6 +6,7 @@ function [wi,gauss,ansatz_values] = quad_tri(points,ansatz_fun,num_of_nodes)
 %ansatz_fun ein Vektor aus Ansatzfunktionen und num_of_nodes die Anzahl der
 %Knoten für die Quadratur.
 
+
 %% x- und y-Werte der Punkte:
 x = points(1,:);
 y = points(2,:);

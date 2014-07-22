@@ -41,10 +41,16 @@ end
 
 %% Schleife über die Dreiecke zur Assemblierung:
 for i = 1:nt
-    tri = triangle(1:3,i);
-    poi = points(:,tri);
-    midtri = midtriangle(:,i);
-    u_S_loc = u_S(tri);
+    poi = points(:,triangle(1:3,i));
+    u_S_loc = u_S(triangle(1:3,i));
+    
+    switch lower(option)
+        case {'linear'}
+            tri = triangle(1:3,i);
+            
+        case {'bubble','quadratic'}
+            tri = midtriangle(:,i);     
+    end
     
     %% Berechnung der lok.,lin. Steifigkeitsmatrix und der Fkt.-Determinante:
     [S,fl,J] = local_mat(poi,u_S_loc,option);
@@ -59,27 +65,14 @@ for i = 1:nt
         fl(k) = fl(k)+J*sum(wi.*fun(gauss(1,:),gauss(2,:)).*...
             ansatz_values(k,:));
     end
-
     
-    switch lower(option)
-        case {'linear'}
-        %% Assemblierung in die globale Steifigkeitsmatrix A und den Vektor f:
-        for k = 1:3
-            for l = 1:3
-                A(tri(k),tri(l)) = A(tri(k),tri(l))+S(k,l);
-            end
-        
-            f(tri(k)) = f(tri(k))+fl(k);
+    %% Assemblierung in die globale Steifigkeitsmatrix A und den Vektor f:
+    for k = 1:3
+        for l = 1:3
+            A(tri(k),tri(l)) = A(tri(k),tri(l))+S(k,l);
         end
-        
-        case {'bubble','quadratic'}
-        %% Assemblierung in die globale Steifigkeitsmatrix A und den Vektor f:
-        for k = 1:3
-            for l = 1:3
-                A(midtri(k),midtri(l)) = A(midtri(k),midtri(l))+S(k,l);
-            end
-            f(midtri(k)) = f(midtri(k))+fl(k);
-        end
+    
+        f(tri(k)) = f(tri(k))+fl(k);
     end
 end
 

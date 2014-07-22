@@ -3,14 +3,14 @@
 data = load('mysquare.mat');
 
 %% Lastfunktion f:
-fun = @(x,y) zeros(1,length(x));
-%fun = @(x,y) -3*ones(1,length(x));
+%fun = @(x,y) zeros(1,length(x));
+fun = @(x,y) -3*ones(1,length(x));
 %fun = @(x,y) 5*(-x.^2-y.^2);
 %fun = @(x,y) -3*x.^2-20*y.^2;
 
 
 %% Gitterinitialisierung mit Plot:
-h = 0.2;
+h = 2;
 %[p,e,t] = initmesh(data.mycircleg,'Hmax',h);
 %[p,e,t] = refinemesh(data.mycircleg,p,e,t);
 %[p,e,t] = refinemesh(data.mycircleg,p,e,t);
@@ -97,21 +97,22 @@ for j = 1 : nmp
 end
 
 %% Lösen des Defektproblems:
-% Aufstellen der Dirichletrandbedingungs-Matrix H_Q:
-bound_ind = find(sum(H));   % --> Randindizes
-l_bound_ind = length(bound_ind);
-H_Q = zeros(l_bound_ind,nmp);
-count_loop = 1;
-
-for i = 1 : l_bound_ind
-    for j = count_loop : nmp             % findet Randmittelpunkte
-        if length(intersect(bound_ind,midpoints([3,4],j))) == 2
-            H_Q(i,j) = 1;
-            count_loop = j+1;
-            break;
-        end
-    end
-end
+% Aufstellen der Dirichletrandbedingungs-Matrix H_Q: wird hier nicht
+% benötigt, da die Lösung des Defektproblems am Rand ungleich 0 sein wird.
+% % bound_ind = find(sum(H));   % --> Randindizes
+% % l_bound_ind = length(bound_ind);
+% % H_Q = zeros(l_bound_ind,nmp);
+% % count_loop = 1;
+% % 
+% % for i = 1 : l_bound_ind
+% %     for j = count_loop : nmp             % findet Randmittelpunkte
+% %         if length(intersect(bound_ind,midpoints([3,4],j))) == 2
+% %             H_Q(i,j) = 1;
+% %             count_loop = j+1;
+% %             break;
+% %         end
+% %     end
+% % end
 
 % Assemblierung der Matrix mit den Bubble-Fktn. und ASM:
 [A_Q,rho_s] = assemble(p,t,fun,7,'bubble',u_S);
@@ -135,6 +136,55 @@ fprintf('%s %s: %.20f\n.','Fehler zwischen exakter Lösung des',...
 fprintf('%s %s: %.20f\n.','Fehler zwischen exakter Lösung des',...
     'Defektproblems und Jacobi-Lsg. ist',err_eps_V_jac);
 
+
+%% Der hierarchische Fehlerschätzer:
+% Berechnung von rho_s(eps_V) nach (3.5):
+rhoS_glob = eps_V'*rho_s;
+
+% Berechnung des lokalen rho_p(eps_V) nach S.661 zwischen (3.9) und (3.10):
+rho_p = zeros(np,1);
+my_triangle = [t(1:3,:);zeros(1,ntri)];
+phi_P = @(xi,eta) [1-xi-eta; xi; eta];
+phi_E = @(xi,eta) [4*xi.*(1-xi-eta); 4*xi.*eta; 4*eta.*(1-xi-eta)];
+[wi,~,phi_E_values] = quad_tri([0,1,0;0,0,1],phi_E,7);
+[~,~,phi_P_values] = quad_tri([0,1,0;0,0,1],phi_P,7);
+        
+for k = 1:np
+    tri_index = find(my_triangle==k);
+    phi_p_local = mod(tri_index,4);
+    w_p = ceil(tri_index/4);
+    E_index = midtri(:,w_p);
+    
+    % Berechnung des Flächenintegrals von rho_p über w_p:
+    for l = 1:length(w_p)
+        % Punkte des jeweiligen Dreiecks, auf dem wir uns befinden, mit
+        % Jacobi-Determinante:
+        mypoi = p(:,t(1:3,w_p(l)));
+        x = mypoi(1,:);
+        y = mypoi(2,:);
+        J = (x(2)-x(1))*(y(3)-y(1))-(x(3)-x(1))*(y(2)-y(1));
+        % Gaußpunkte und die lokalen Anteile von eps_V:
+        eps_V_local = eps_V(E_index(:,l));
+        [~,gauss,~] = quad_tri(mypoi,@(x,y) 0,7);
+        % die Funktionswerte der jeweiligen lokalen Hutfunktion phi_P:
+        phi_Pl_values = phi_P_values(phi_p_local(l),:);
+        % die Berechnung des ersten Integrals von rho_p:
+        rho_p(k) = rho_p(k) + J * sum(fun(gauss(1,:),gauss(2,:)).*...
+            (eps_V_local'*phi_E_values).*phi_Pl_values);
+    end
+    
+    % Berechnung des Kurvenintegrals über die Kanten E\in E_p:
+        % Berechnung der Menge von Kanten E_p auf denen der Punkt P liegt:
+        my_midpoints = [midpoints(3:4,:);zeros(1,nmp)];
+        help_Ep = find(my_midpoints==k);
+        E_p = ceil(help_Ep/3);
+    
+        % Berechnung der Nachbarn vom Kanten-Set E_p:
+        [old_neighbours,flag] = edge_neighbourhood(E_p,midtri);
+        no_bound_edge = find(flag);
+        E_p = E_p(no_bound_edge);
+        neighbours = old_neighbours(:,no_bound_edge);
+end
 
 
 %% Plot der Lösungen mit Active-Set-Methode & projiziertem Jacobi-Verfahren:
@@ -163,37 +213,3 @@ if ~isempty(find(abs(eig_val) < 1e-14, 1))
 end
 
 disp(['Determinante = ' num2str(detA)]);
-
-
-
-
-
-
-
-
-
-
-%% Analytische Lösung (?) ohne Last (f=0) auf einem Kreis:
-% 
-% a = 0.3;
-% b = 1;
-% xhat = 1-sqrt(1-a/b);
-% alpha = (a-b*xhat^2)/(1-xhat);
-% u_ana = zeros(np,1);
-% for i = 1:np
-%     r = sqrt(p(1,i)^2+p(2,i)^2);
-%    if r >= -xhat && r <= xhat
-%        u_ana(i) = a-b*r^2;
-%    elseif r < -xhat
-%        u_ana(i) = alpha*(1+r);
-%    else
-%        u_ana(i) = alpha*(1-r);
-%    end
-% end
-% 
-% subplot(3,2,[5,6]); pdeplot(p,e,t,'zdata',u_ana);
-% 
-% fval
-% 1/2*u_quadprog'*A*u_quadprog - f'*u_quadprog
-% 1/2*u_jacobi'*A*u_jacobi - f'*u_jacobi
-% 1/2*u_ana'*A*u_ana
