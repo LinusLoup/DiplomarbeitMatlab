@@ -3,14 +3,14 @@
 data = load('mysquare.mat');
 
 %% Lastfunktion f:
-%fun = @(x,y) zeros(1,length(x));
-fun = @(x,y) -3*ones(1,length(x));
+fun = @(x,y) zeros(1,length(x));
+%fun = @(x,y) -3*ones(1,length(x));
 %fun = @(x,y) 5*(-x.^2-y.^2);
 %fun = @(x,y) -3*x.^2-20*y.^2;
 
 
 %% Gitterinitialisierung mit Plot:
-h = 2;
+h = 1;
 %[p,e,t] = initmesh(data.mycircleg,'Hmax',h);
 %[p,e,t] = refinemesh(data.mycircleg,p,e,t);
 %[p,e,t] = refinemesh(data.mycircleg,p,e,t);
@@ -144,16 +144,26 @@ rhoS_glob = eps_V'*rho_s;
 % Berechnung des lokalen rho_p(eps_V) nach S.661 zwischen (3.9) und (3.10):
 rho_p = zeros(np,1);
 my_triangle = [t(1:3,:);zeros(1,ntri)];
+
+% Hut- und Bubble-Funktionen:
 phi_P = @(xi,eta) [1-xi-eta; xi; eta];
 phi_E = @(xi,eta) [4*xi.*(1-xi-eta); 4*xi.*eta; 4*eta.*(1-xi-eta)];
+% Berechnung der Gewichte und Funktionswerte für das Flächenintegral:
 [wi,~,phi_E_values] = quad_tri([0,1,0;0,0,1],phi_E,7);
 [~,~,phi_P_values] = quad_tri([0,1,0;0,0,1],phi_P,7);
         
+% lokale Gewichte & Stützstellen für die Gaußquadratur für das Kurvenint.:
+%wi_local = [1,1];
+nodes_local = [-sqrt(1/3),sqrt(1/3)];
+phiPE_local = @(xi) (xi+1)/2.*(-xi.^2+1); % (-xi+1)/2.*(-xi.^2+1)];
+local_phiPE_int = sum(phiPE_local(nodes_local));
+
 for k = 1:np
     tri_index = find(my_triangle==k);
     phi_p_local = mod(tri_index,4);
     w_p = ceil(tri_index/4);
     E_index = midtri(:,w_p);
+    active_point = p(:,k);
     
     % Berechnung des Flächenintegrals von rho_p über w_p:
     for l = 1:length(w_p)
@@ -184,6 +194,51 @@ for k = 1:np
         no_bound_edge = find(flag);
         E_p = E_p(no_bound_edge);
         neighbours = old_neighbours(:,no_bound_edge);
+        
+        % Berechnung des Integrals mittels Gaußquadratur:
+        for i = 1:length(E_p)
+            % Berechnung der Kantenpunkte:
+            edge_poi_ind = midpoints(3:4,E_p(i));
+            edge_poi = p(:,edge_poi_ind);
+            
+            % Berechnung der Gradienten von u_S auf T_1 und T_2:
+            neigh_tri_ind = neighbours(:,i);
+            neigh_tri = t(1:3,neigh_tri_ind);
+            p_T = p(:,neigh_tri);
+            uS_T = u_S(neigh_tri);
+            
+            p_T1 = p_T(:,1:3);
+            p_T2 = p_T(:,4:6);
+            uS_T1 = uS_T(:,1);
+            uS_T2 = uS_T(:,2);
+            graduS_T = [gradu(p_T1,uS_T1);gradu(p_T2,uS_T2)];
+            
+            % Berechnung des Normalenvektors zwischen T_1 und T_2:
+            connect = edge_poi(:,2)-edge_poi(:,1);
+            orth_connect = [-connect(2);connect(1)];
+            n = 1/norm(orth_connect)*orth_connect;
+            
+                % Test, ob n von T_1 nach T_2 zeigt:
+            p3_T1 = setdiff(p_T1',edge_poi','rows')';
+            edge_test = (p3_T1-edge_poi(:,1))';
+            
+            if edge_test*n > 0
+                n = -n;
+            end
+            
+            % Der Normalenfluß j_E:
+            j_E = normal_flux(graduS_T,n);
+            
+            % Transformation des lokalen Integrals auf die globale Kante:
+            laenge = norm(edge_poi(:,1)-edge_poi(:,2));
+            global_phiPE_int = local_phiPE_int*laenge/2;
+            
+            % Bestimmung des Funktionswertes von eps_V(x_E):
+            epsV_loc = eps_V(E_p(i));
+            
+            % Hinzufügen der Kurvenintegrale zur rho_p:
+            rho_p(k) = rho_p(k)+j_E*epsV_loc*global_phiPE_int;
+        end
 end
 
 
