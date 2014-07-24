@@ -3,8 +3,8 @@
 data = load('mysquare.mat');
 
 %% Lastfunktion f:
-fun = @(x,y) zeros(1,length(x));
-%fun = @(x,y) -3*ones(1,length(x));
+%$fun = @(x,y) zeros(1,length(x));
+fun = @(x,y) -5*ones(1,length(x));
 %fun = @(x,y) 5*(-x.^2-y.^2);
 %fun = @(x,y) -3*x.^2-20*y.^2;
 
@@ -53,12 +53,16 @@ end
 %% Berechnung der z-Werte vom Hindernis für Plot, sowie mit den Gitter- 
 %% und Mittelpunkten:
 [x,y] = meshgrid(-1:0.1:1,-1:0.1:1);
-z_obs = -x.^2-y.^2+0.3;
+%z_obs = -x.^2-y.^2+0.3;
+obstacle = @(x,y) -ones(size(x))';
+z_obs = obstacle(x,y);
+
 subplot(3,3,3);surf(x,y,z_obs);
 
-z_obs_prob = (-p(1,:).^2-p(2,:).^2+0.3)';
-z_obs_midpoints = (-midpoints(1,:).^2-midpoints(2,:).^2+0.3)';
-
+%z_obs_prob = (-p(1,:).^2-p(2,:).^2+0.3)';
+%z_obs_midpoints = (-midpoints(1,:).^2-midpoints(2,:).^2+0.3)';
+z_obs_prob = obstacle(p(1,:),p(2,:));
+z_obs_midpoints = obstacle(midpoints(1,:),midpoints(2,:));
 
 tic
 
@@ -115,131 +119,39 @@ end
 % % end
 
 % Assemblierung der Matrix mit den Bubble-Fktn. und ASM:
-[A_Q,rho_s] = assemble(p,t,fun,7,'bubble',u_S);
-eps_V = quadprog(A_Q,-rho_s,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
+[A_Q,rhoS_phiE] = assemble(p,t,fun,7,'bubble',u_S);
+eps_V = quadprog(A_Q,-rhoS_phiE,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
 
 toc
 
 
 % Vergleich der ASM mit dem projektiven Jacobi-Verfahren:
-eps_V_jac = projected_jacobi(A_Q,rho_s,z_obs_midpoints-u_S_mid,...
+eps_V_jac = projected_jacobi(A_Q,rhoS_phiE,z_obs_midpoints-u_S_mid,...
     rand(nmp,1),1e-15);
 
 
 % Probe durch exakte Lösung laut (2.10):
-[eps_V_exact,a_phi] = exact_defect(p,t,midtri,rho_s,u_S_mid,z_obs_midpoints);
+[eps_V_exact,a_phi] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,z_obs_midpoints);
 
 err_eps_V_quad = norm(eps_V-eps_V_exact);
 err_eps_V_jac = norm(eps_V_jac-eps_V_exact);
-fprintf('%s %s: %.20f\n.','Fehler zwischen exakter Lösung des',...
+fprintf('%s %s: %.20f.\n','Fehler zwischen exakter Lösung des',...
     'Defektproblems und ASM-Lsg. ist',err_eps_V_quad);
-fprintf('%s %s: %.20f\n.','Fehler zwischen exakter Lösung des',...
+fprintf('%s %s: %.20f.\n','Fehler zwischen exakter Lösung des',...
     'Defektproblems und Jacobi-Lsg. ist',err_eps_V_jac);
 
 
 %% Der hierarchische Fehlerschätzer:
 % Berechnung von rho_s(eps_V) nach (3.5):
-rhoS_glob = eps_V'*rho_s;
+rhoS_glob = eps_V'*rhoS_phiE;
 
 % Berechnung des lokalen rho_p(eps_V) nach S.661 zwischen (3.9) und (3.10):
-rho_p = zeros(np,1);
-my_triangle = [t(1:3,:);zeros(1,ntri)];
+rho_p = eval_rho_p(p,t,midpoints,midtri,u_S,eps_V,fun);
 
-% Hut- und Bubble-Funktionen:
-phi_P = @(xi,eta) [1-xi-eta; xi; eta];
-phi_E = @(xi,eta) [4*xi.*(1-xi-eta); 4*xi.*eta; 4*eta.*(1-xi-eta)];
-% Berechnung der Gewichte und Funktionswerte für das Flächenintegral:
-[wi,~,phi_E_values] = quad_tri([0,1,0;0,0,1],phi_E,7);
-[~,~,phi_P_values] = quad_tri([0,1,0;0,0,1],phi_P,7);
-        
-% lokale Gewichte & Stützstellen für die Gaußquadratur für das Kurvenint.:
-%wi_local = [1,1];
-nodes_local = [-sqrt(1/3),sqrt(1/3)];
-phiPE_local = @(xi) (xi+1)/2.*(-xi.^2+1); % (-xi+1)/2.*(-xi.^2+1)];
-local_phiPE_int = sum(phiPE_local(nodes_local));
+% Bestimmung der zu verfeinernden Dreiecke:
+theta = 0.3;
 
-for k = 1:np
-    tri_index = find(my_triangle==k);
-    phi_p_local = mod(tri_index,4);
-    w_p = ceil(tri_index/4);
-    E_index = midtri(:,w_p);
-    active_point = p(:,k);
-    
-    % Berechnung des Flächenintegrals von rho_p über w_p:
-    for l = 1:length(w_p)
-        % Punkte des jeweiligen Dreiecks, auf dem wir uns befinden, mit
-        % Jacobi-Determinante:
-        mypoi = p(:,t(1:3,w_p(l)));
-        x = mypoi(1,:);
-        y = mypoi(2,:);
-        J = (x(2)-x(1))*(y(3)-y(1))-(x(3)-x(1))*(y(2)-y(1));
-        % Gaußpunkte und die lokalen Anteile von eps_V:
-        eps_V_local = eps_V(E_index(:,l));
-        [~,gauss,~] = quad_tri(mypoi,@(x,y) 0,7);
-        % die Funktionswerte der jeweiligen lokalen Hutfunktion phi_P:
-        phi_Pl_values = phi_P_values(phi_p_local(l),:);
-        % die Berechnung des ersten Integrals von rho_p:
-        rho_p(k) = rho_p(k) + J * sum(fun(gauss(1,:),gauss(2,:)).*...
-            (eps_V_local'*phi_E_values).*phi_Pl_values);
-    end
-    
-    % Berechnung des Kurvenintegrals über die Kanten E\in E_p:
-        % Berechnung der Menge von Kanten E_p auf denen der Punkt P liegt:
-        my_midpoints = [midpoints(3:4,:);zeros(1,nmp)];
-        help_Ep = find(my_midpoints==k);
-        E_p = ceil(help_Ep/3);
-    
-        % Berechnung der Nachbarn vom Kanten-Set E_p:
-        [old_neighbours,flag] = edge_neighbourhood(E_p,midtri);
-        no_bound_edge = find(flag);
-        E_p = E_p(no_bound_edge);
-        neighbours = old_neighbours(:,no_bound_edge);
-        
-        % Berechnung des Integrals mittels Gaußquadratur:
-        for i = 1:length(E_p)
-            % Berechnung der Kantenpunkte:
-            edge_poi_ind = midpoints(3:4,E_p(i));
-            edge_poi = p(:,edge_poi_ind);
-            
-            % Berechnung der Gradienten von u_S auf T_1 und T_2:
-            neigh_tri_ind = neighbours(:,i);
-            neigh_tri = t(1:3,neigh_tri_ind);
-            p_T = p(:,neigh_tri);
-            uS_T = u_S(neigh_tri);
-            
-            p_T1 = p_T(:,1:3);
-            p_T2 = p_T(:,4:6);
-            uS_T1 = uS_T(:,1);
-            uS_T2 = uS_T(:,2);
-            graduS_T = [gradu(p_T1,uS_T1);gradu(p_T2,uS_T2)];
-            
-            % Berechnung des Normalenvektors zwischen T_1 und T_2:
-            connect = edge_poi(:,2)-edge_poi(:,1);
-            orth_connect = [-connect(2);connect(1)];
-            n = 1/norm(orth_connect)*orth_connect;
-            
-                % Test, ob n von T_1 nach T_2 zeigt:
-            p3_T1 = setdiff(p_T1',edge_poi','rows')';
-            edge_test = (p3_T1-edge_poi(:,1))';
-            
-            if edge_test*n > 0
-                n = -n;
-            end
-            
-            % Der Normalenfluß j_E:
-            j_E = normal_flux(graduS_T,n);
-            
-            % Transformation des lokalen Integrals auf die globale Kante:
-            laenge = norm(edge_poi(:,1)-edge_poi(:,2));
-            global_phiPE_int = local_phiPE_int*laenge/2;
-            
-            % Bestimmung des Funktionswertes von eps_V(x_E):
-            epsV_loc = eps_V(E_p(i));
-            
-            % Hinzufügen der Kurvenintegrale zur rho_p:
-            rho_p(k) = rho_p(k)+j_E*epsV_loc*global_phiPE_int;
-        end
-end
+
 
 
 %% Plot der Lösungen mit Active-Set-Methode & projiziertem Jacobi-Verfahren:
@@ -251,7 +163,7 @@ subplot(3,3,[7,8,9]); pdesurf(p,t,u_quadprog);
 %% Berechnung des Fehlers zwischen Active-Set- und Jacobi-Verfahren:
 err_vec = (u_quadprog-u_jacobi);
 err = norm(err_vec);
-fprintf('%s %s: %.20f\n.','Fehler zwischen Active-Set-Methode und',...
+fprintf('%s %s: %.20f.\n','Fehler zwischen Active-Set-Methode und',...
     'projiziertem Jacobi-Verfahren',err);
 %fprintf('Der Fehlervektor u_quadprog-u_jacobi ist:\n')
 %fprintf('%.10f\n.',err_vec);
