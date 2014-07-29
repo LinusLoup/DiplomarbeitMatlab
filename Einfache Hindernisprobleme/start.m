@@ -18,15 +18,9 @@ h = 2;
 %[p,e,t] = refinemesh(data.mycircleg,p,e,t);
 
 [p,e,t] = initmesh(data.mysquareg,'Hmax',h);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
+% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
+% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
+% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
 triangle_flag = zeros(size(t,2),1);
 u_S = [];
 recursion_depth = 1;
@@ -82,7 +76,6 @@ while 1
     u_S_mid = zeros(nmp,1);
     u_S = u_quadprog;
 
-    break;
     
     for j = 1 : nmp
         index = midpoints([3,4],j);
@@ -109,7 +102,7 @@ while 1
 
     % Assemblierung der Matrix mit den Bubble-Fktn. und ASM:
     [A_Q,rhoS_phiE] = assemble(p,t,fun,7,'bubble',u_S);
-    %eps_V = quadprog(A_Q,-rhoS_phiE,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
+    eps_V = quadprog(A_Q,-rhoS_phiE,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
 
 
 % % Vergleich der ASM mit dem projektiven Jacobi-Verfahren:
@@ -117,8 +110,8 @@ while 1
 %     rand(nmp,1),1e-15);
 % 
 % 
- % Probe durch exakte Lösung laut (2.10):
- [eps_V,a_phi] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,z_obs_midpoints);
+% % Probe durch exakte Lösung laut (2.10):
+% [eps_V,a_phi] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,z_obs_midpoints);
 % 
 % err_eps_V_quad = norm(eps_V-eps_V_exact);
 % err_eps_V_jac = norm(eps_V_jac-eps_V_exact);
@@ -136,17 +129,18 @@ while 1
     rho_p = eval_rho_p(p,t,midpoints,midtri,u_S,eps_V,fun);
 
     % Bestimmung der zu verfeinernden Dreiecke:
+    eps = 0.001;
     theta = 0.005;
     triangle_flag = zeros(ntri,1);
 
     for k = 1:length(rho_p)
-        if abs(rho_p(k)) >= theta*rhoS_glob
+        if rho_p(k) >= theta*rhoS_glob
             neighbours = neighbourhood(k,t,'point');
             triangle_flag(neighbours) = 1;
         end
     end
 
-    if triangle_flag == zeros(ntri,1)
+    if (sum(triangle_flag == zeros(ntri,1)) == ntri || rhoS_glob < eps)
         fprintf('%s %f.\n','Die Rekursionstiefe ist ',recursion_depth);
         break;
     end
