@@ -26,6 +26,7 @@ switch lower(option)
     %% Initialisierung der globalen Größen:
     A = zeros(np,np);
     f = zeros(np,1);
+    my_tri = triangle(1:3,:);
     
     case {'bubble','quadratic'}
 
@@ -36,21 +37,15 @@ switch lower(option)
     %% Initialisierung der globalen Größen:
     A = zeros(nmp,nmp);
     f = zeros(nmp,1);
-
+    my_tri = midtriangle;
+    
 end
 
 %% Schleife über die Dreiecke zur Assemblierung:
 for i = 1:nt
     poi = points(:,triangle(1:3,i));
     u_S_loc = u_S(triangle(1:3,i));
-    
-    switch lower(option)
-        case {'linear'}
-            tri = triangle(1:3,i);
-            
-        case {'bubble','quadratic'}
-            tri = midtriangle(:,i);     
-    end
+    tri = my_tri(:,i);
     
     %% Berechnung der lok.,lin. Steifigkeitsmatrix und der Fkt.-Determinante:
     [S,fl,J] = local_mat(poi,u_S_loc,option);

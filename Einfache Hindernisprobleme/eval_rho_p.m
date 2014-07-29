@@ -48,7 +48,7 @@ for k = 1:np
         phi_Pl_values = phi_P_values(phi_p_local(j),:);
         % die Berechnung des ersten Integrals von rho_p:
         rho_p(k) = rho_p(k) + J * sum(wi.*fun(gauss(1,:),gauss(2,:)).*...
-            (eps_V_local'*phi_E_values).*phi_Pl_values);
+            (eps_V_local'*phi_E_values).*(phi_Pl_values));
     end
     
     % Berechnung des Kurvenintegrals über die Kanten E\in E_p:
@@ -58,10 +58,10 @@ for k = 1:np
         E_p = ceil(help_Ep/3);
     
         % Berechnung der Nachbarn vom Kanten-Set E_p:
-        [old_neighbours,flag] = edge_neighbourhood(E_p,midtri);
-        no_bound_edge = find(flag);
-        E_p = E_p(no_bound_edge);
-        neighbours = old_neighbours(:,no_bound_edge);
+        [neighbours,flag] = neighbourhood(E_p,midtri,'edges');
+        %no_bound_edge = find(flag);
+        %E_p = E_p(no_bound_edge);
+        %neighbours = neighbours(:,no_bound_edge);
         
         % Berechnung des Integrals mittels Gaußquadratur:
         for i = 1:length(E_p)
@@ -78,7 +78,13 @@ for k = 1:np
             p_T1 = p_T(:,1:3);
             p_T2 = p_T(:,4:6);
             uS_T1 = uS_T(:,1);
-            uS_T2 = uS_T(:,2);
+            
+            if flag(i) == 0
+                uS_T2 = zeros(3,1);
+            else
+                uS_T2 = uS_T(:,2);
+            end
+            
             graduS_T = [gradu(p_T1,uS_T1);gradu(p_T2,uS_T2)];
             
             % Berechnung des Normalenvektors zwischen T_1 und T_2:

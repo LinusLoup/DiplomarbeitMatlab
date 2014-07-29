@@ -19,4 +19,3 @@ grad_u = 1/J * ([y(3)-y(1), y(1)-y(2); x(1)-x(3), x(2)-x(1)]*...
     [zvalues(2)-zvalues(1);zvalues(3)-zvalues(1)])';
 
 end
-
