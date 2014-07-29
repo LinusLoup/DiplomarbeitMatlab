@@ -12,21 +12,15 @@ fun = @(x,y) -5*ones(1,length(x));
 
 
 %% Gitterinitialisierung:
-h = 2;
+h = 1;
 %[p,e,t] = initmesh(data.mycircleg,'Hmax',h);
 %[p,e,t] = refinemesh(data.mycircleg,p,e,t);
 %[p,e,t] = refinemesh(data.mycircleg,p,e,t);
 
 [p,e,t] = initmesh(data.mysquareg,'Hmax',h);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
-[p,e,t] = refinemesh(data.mysquareg,p,e,t);
+% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
+% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
+% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
 triangle_flag = zeros(size(t,2),1);
 u_S = [];
 recursion_depth = 1;
@@ -46,9 +40,9 @@ while 1
 
     %% Berechnung der z-Werte vom Hindernis für Plot, sowie mit den Gitter- 
     %% und Mittelpunkten:
-    obstacle = @(x,y) -ones(size(x))';
     %z_obs_prob = (-p(1,:).^2-p(2,:).^2+0.3)';
     %z_obs_midpoints = (-midpoints(1,:).^2-midpoints(2,:).^2+0.3)';
+    obstacle = @(x,y) -ones(size(x))';
     z_obs_prob = obstacle(p(1,:),p(2,:));
     z_obs_midpoints = obstacle(midpoints(1,:),midpoints(2,:));
 
@@ -81,9 +75,7 @@ while 1
     %% Berechnung der Funktionswerte von u_S auf den Mittelpunkten:
     u_S_mid = zeros(nmp,1);
     u_S = u_quadprog;
-
-    break;
-    
+  
     for j = 1 : nmp
         index = midpoints([3,4],j);
         u_S_mid(j) = (u_S(index(1))+u_S(index(2)))/2; 
@@ -109,7 +101,7 @@ while 1
 
     % Assemblierung der Matrix mit den Bubble-Fktn. und ASM:
     [A_Q,rhoS_phiE] = assemble(p,t,fun,7,'bubble',u_S);
-    %eps_V = quadprog(A_Q,-rhoS_phiE,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
+    eps_V = quadprog(A_Q,-rhoS_phiE,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
 
 
 % % Vergleich der ASM mit dem projektiven Jacobi-Verfahren:
@@ -118,7 +110,7 @@ while 1
 % 
 % 
  % Probe durch exakte Lösung laut (2.10):
- [eps_V,a_phi] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,z_obs_midpoints);
+% [eps_V,a_phi] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,z_obs_midpoints);
 % 
 % err_eps_V_quad = norm(eps_V-eps_V_exact);
 % err_eps_V_jac = norm(eps_V_jac-eps_V_exact);
@@ -135,7 +127,10 @@ while 1
     % Berechnung des lokalen rho_p(eps_V) nach S.661 zwischen (3.9) und (3.10):
     rho_p = eval_rho_p(p,t,midpoints,midtri,u_S,eps_V,fun);
 
+    break;
+    
     % Bestimmung der zu verfeinernden Dreiecke:
+    eps = 0.0001;
     theta = 0.005;
     triangle_flag = zeros(ntri,1);
 
@@ -146,7 +141,9 @@ while 1
         end
     end
 
-    if triangle_flag == zeros(ntri,1)
+    % Abbruchskriterium: Falls kein Dreieck mehr verfeinert wird oder der
+    % hierarchische Fehlerschätzer genügend klein ist.
+    if (sum(triangle_flag == zeros(ntri,1)) == ntri || rhoS_glob < eps)
         fprintf('%s %f.\n','Die Rekursionstiefe ist ',recursion_depth);
         break;
     end
