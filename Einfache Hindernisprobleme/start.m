@@ -1,42 +1,43 @@
-clear all
-
 %% Laden der Geometriedaten:
-%data = load('mycircle.mat');
-data = load('mysquare.mat');
+%data = load('mycircle.mat');   %Einheitskreis
+data = load('mysquare.mat');    %Quadrat: [-1,1]^2
 
 %% Lastfunktion f:
 %fun = @(x,y) zeros(1,length(x));
 fun = @(x,y) -5*ones(1,length(x));
+data_exact = load('u_exact_const_f.mat');
+J_u = data_exact.fval;
 %fun = @(x,y) 9*(-x.^2-y.^2);
-%fun = @(x,y) -3*x-5*y.^2;
+%fun = @(x,y) -3*x.^2-5*y.^2;
 
 
 %% Gitterinitialisierung:
-h = 1;
-%[p,e,t] = initmesh(data.mycircleg,'Hmax',h);
-%[p,e,t] = refinemesh(data.mycircleg,p,e,t);
-%[p,e,t] = refinemesh(data.mycircleg,p,e,t);
+h = 2;
+%[p,e,t] = initmesh(data.mycircleg,'Hmax',h);   %Einheitskreis
+[p,e,t] = initmesh(data.mysquareg,'Hmax',h);    %Quadrat: [-1,1]^2
 
-[p,e,t] = initmesh(data.mysquareg,'Hmax',h);
-% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
-% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
-% [p,e,t] = refinemesh(data.mysquareg,p,e,t);
-triangle_flag = zeros(size(t,2),1);
+
+%% globale Initialisierungen:
+refine_triangle = [];
 u_S = [];
-recursion_depth = 1;
+recursion_depth = 1;    % Rekursionstiefe
+nmax = 2000;            % maximale Anzahl der verwendeten Punkte
+eps = 0.01;             % obere Grenze für hierarchischen Fehlerschätzer
+theta = 0.4;            % Schranke für lokalen und globalen Anteil vom FS
+rhoS_plot = zeros(20,1);% Vektor von rho_S in allen Rekursionsschritten
+IQ_plot = zeros(20,1);  % Vektor mit dem hierarchischen Fehler -I_Q(eps_V)
+J_error = zeros(20,1);  % Vektor mit Fehler zwischen den Funktionalen
 
 tic
 
 while 1
     %% Initialisierungen:
-    [p,e,t,u_S] = refinemesh(data.mysquareg,p,e,t,u_S,find(triangle_flag));
     ntri = size(t,2);
     np = size(p,2);
-
-    %% Berechnung und Plot der Mittelpunkte:
+    
+    %% Berechnung der Mittelpunkte:
     [midpoints,midtri] = midpoints_of_triangle(t,p);
     nmp = size(midpoints,2);
-
 
     %% Berechnung der z-Werte vom Hindernis für Plot, sowie mit den Gitter- 
     %% und Mittelpunkten:
@@ -46,6 +47,9 @@ while 1
     z_obs_prob = obstacle(p(1,:),p(2,:));
     z_obs_midpoints = obstacle(midpoints(1,:),midpoints(2,:));
 
+%     if recursion_depth == 1
+%         [u,fval] = exact_solution(data.mysquareg,data.mysquareb,p,e,t,fun,obstacle);
+%     end
 
     %% Assemblierung der Daten mit Berechnung der Dirichlet-Randdaten: 
     [A,f] = assemble(p,t,fun,7,'linear');
@@ -56,7 +60,7 @@ while 1
 
     %% Lösung der Variationsungleichung mit Active-Set- und Jacobi-Verfahren:
     % Active-Set-Methode:
-    [u_quadprog,fval] = quadprog(A,-f,[],[],H,R,z_obs_prob,[],u_S);
+    [u_S,J_uS] = quadprog(A,-f,[],[],H,R,z_obs_prob,[],u_S);
 
 
 % % Eliminieren von Dirichletpunkten aus der Matrix für das Jacobi-Verfahren:
@@ -74,13 +78,7 @@ while 1
 
     %% Berechnung der Funktionswerte von u_S auf den Mittelpunkten:
     u_S_mid = zeros(nmp,1);
-    u_S = u_quadprog;
-<<<<<<< HEAD
-
     
-=======
-  
->>>>>>> FETCH_HEAD
     for j = 1 : nmp
         index = midpoints([3,4],j);
         u_S_mid(j) = (u_S(index(1))+u_S(index(2)))/2; 
@@ -114,11 +112,7 @@ while 1
 %     rand(nmp,1),1e-15);
 % 
 % 
-<<<<<<< HEAD
 % % Probe durch exakte Lösung laut (2.10):
-=======
- % Probe durch exakte Lösung laut (2.10):
->>>>>>> FETCH_HEAD
 % [eps_V,a_phi] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,z_obs_midpoints);
 % 
 % err_eps_V_quad = norm(eps_V-eps_V_exact);
@@ -132,41 +126,47 @@ while 1
     %% Der hierarchische Fehlerschätzer:
     % Berechnung von rho_s(eps_V) nach (3.5):
     rhoS_glob = eps_V'*rhoS_phiE;
+    rhoS_plot(recursion_depth) = rhoS_glob;
+    
+    % Berechnung von -I_Q(eps_V) nach :
+    IQ_plot(recursion_depth) = -1/2*(eps_V.^2)'*diag(A_Q) + rhoS_glob;
+    
+    % Berechnung des Fehlers J(u_S)-J(u) zwischen den Funktionalen:
+    J_error(recursion_depth) = J_uS-J_u;
 
     % Berechnung des lokalen rho_p(eps_V) nach S.661 zwischen (3.9) und (3.10):
     rho_p = eval_rho_p(p,t,midpoints,midtri,u_S,eps_V,fun);
-
-    break;
     
     % Bestimmung der zu verfeinernden Dreiecke:
-<<<<<<< HEAD
-    eps = 0.001;
-=======
-    eps = 0.0001;
->>>>>>> FETCH_HEAD
-    theta = 0.005;
-    triangle_flag = zeros(ntri,1);
+    refine_triangle = find_triangle_refinement(rho_p,rhoS_glob,t,theta);
 
-    for k = 1:length(rho_p)
-        if rho_p(k) >= theta*rhoS_glob
-            neighbours = neighbourhood(k,t,'point');
-            triangle_flag(neighbours) = 1;
-        end
-    end
-
-<<<<<<< HEAD
-=======
-    % Abbruchskriterium: Falls kein Dreieck mehr verfeinert wird oder der
-    % hierarchische Fehlerschätzer genügend klein ist.
->>>>>>> FETCH_HEAD
-    if (sum(triangle_flag == zeros(ntri,1)) == ntri || rhoS_glob < eps)
+    % Abbruchskriterium: Falls 
+   
+    %% Verfeinerung des Gitters:
+    [p_h,e_h,t_h,uS_h] = refinemesh(data.mysquareg,p,e,t,u_S,refine_triangle);
+    
+    %% Abbruchkriterium:
+    % falls die Anzahl der Ecken über nmax liegt oder kein Dreieck mehr
+    % verfeinert wird oder der hierarchische Fehlerschätzer genügend klein 
+    % ist.
+    if (length(p_h) > nmax || isempty(refine_triangle) || rhoS_glob < eps)
         fprintf('%s %f.\n','Die Rekursionstiefe ist ',recursion_depth);
         break;
+    else
+        p = p_h;
+        e = e_h;
+        t = t_h;
+        u_S = uS_h;
+        recursion_depth = recursion_depth + 1;
     end
-    recursion_depth = recursion_depth + 1;
 end
 
 toc
+
+%% Eliminieren der Nullen aus dem Vektoren der Fehler/-schätzer:
+rhoS_plot = setdiff(rhoS_plot,0,'stable');
+IQ_plot = setdiff(IQ_plot,0,'stable');
+J_error = setdiff(J_error,0,'stable');
 
 
 %% Plot vom Gitter, Eck- sowie Mittelpunkten:
@@ -205,19 +205,8 @@ z_obs = obstacle(x,y);
 subplot(3,3,3);surf(x,y,z_obs);
 
 
-%% Plot der Lösungen mit Active-Set-Methode & projiziertem Jacobi-Verfahren:
+%% Plot der Lösungen:
 subplot(3,3,4:9); pdeplot(p,e,t,'zdata',u_S);
-%subplot(3,3,[7,8,9]); pdeplot(p,e,t,'zdata',u_jacobi);
-%subplot(3,3,[7,8,9]); pdesurf(p,t,u_quadprog);
-
-
-% %% Berechnung des Fehlers zwischen Active-Set- und Jacobi-Verfahren:
-% err_vec = (u_quadprog-u_jacobi);
-% err = norm(err_vec);
-% fprintf('%s %s: %.20f.\n','Fehler zwischen Active-Set-Methode und',...
-%     'projiziertem Jacobi-Verfahren',err);
-% %fprintf('Der Fehlervektor u_quadprog-u_jacobi ist:\n')
-% %fprintf('%.10f\n.',err_vec);
 
 
 %% Ausgabe der Eigenwerte und Berechnung der Determinanten von A:

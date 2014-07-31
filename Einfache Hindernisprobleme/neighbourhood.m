@@ -27,4 +27,3 @@ switch lower(option)
         help_index = find(my_triangle==edges_or_point);
         neighbours = ceil(help_index/4);
 end
-
