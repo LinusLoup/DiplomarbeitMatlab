@@ -8,11 +8,18 @@ np = length(rho_p);
 point_index = zeros(np,1);
 rho_local = zeros(np,1);
 triangle_index = [];
+%counter = 1;
 
 %% Berechnung der Punkte, deren lokaler Fehleranteil zur Verfeinerung führt:
 for i = 1:np
     [new_rho,new_point] = max(rho_p);
+    %new_rho = max(rho_p);
+    %new_point = find(rho_p == new_rho);
     rho_p(new_point) = 0;
+    %number_new_points = length(new_point);
+    %rho_local(counter) = number_new_points * new_rho;
+    %point_index(counter:counter+number_new_points-1) = new_point;
+    %counter = counter + number_new_points;
     rho_local(i) = new_rho;
     point_index(i) = new_point;
     
