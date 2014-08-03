@@ -21,9 +21,10 @@ h = 2;
 refine_triangle = [];
 u_S = [];
 recursion_depth = 1;    % Rekursionstiefe
-nmax = 2000;            % maximale Anzahl der verwendeten Punkte
+recmax = 20;            % maximale Rekursionstiefe
+nmax = 1500;            % maximale Anzahl der verwendeten Punkte
 eps = 0.01;             % obere Grenze für hierarchischen Fehlerschätzer
-theta = 0.4;            % Schranke für lokalen und globalen Anteil vom FS
+theta = 0.3;            % Schranke für lokalen und globalen Anteil vom FS
 rhoS_plot = zeros(20,1);% Vektor von rho_S in allen Rekursionsschritten
 IQ_plot = zeros(20,1);  % Vektor mit dem hierarchischen Fehler -I_Q(eps_V)
 J_error = zeros(20,1);  % Vektor mit Fehler zwischen den Funktionalen
@@ -136,11 +137,20 @@ while 1
 
     % Berechnung des lokalen rho_p(eps_V) nach S.661 zwischen (3.9) und (3.10):
     rho_p = eval_rho_p(p,t,midpoints,midtri,u_S,eps_V,fun);
+%    rho_E = eval_rho_E(p,t,midpoints,midtri,u_S,eps_V,fun);
+
+    % Berechnen der Mengen N0, N0+, N+, N++, N0- für die Oszillationsterme:
+    N0_set = N0(u_S,z_obs_prob);
+    N0plus_set = N0plus(N0_set,obstacle,p,t,u_S);
     
+    % Berechnnung der Oszillationsterme:
+    osc1_term = osc1(N0plus_set,z_obs_prob,p,t,u_S);
+    
+    osc_term = osc1_term;
+
     % Bestimmung der zu verfeinernden Dreiecke:
     refine_triangle = find_triangle_refinement(rho_p,rhoS_glob,t,theta);
-
-    % Abbruchskriterium: Falls 
+%    refine_triangle = find_triangle_refinement(rho_E,rhoS_glob,midtri,theta);
    
     %% Verfeinerung des Gitters:
     [p_h,e_h,t_h,uS_h] = refinemesh(data.mysquareg,p,e,t,u_S,refine_triangle);
@@ -149,7 +159,9 @@ while 1
     % falls die Anzahl der Ecken über nmax liegt oder kein Dreieck mehr
     % verfeinert wird oder der hierarchische Fehlerschätzer genügend klein 
     % ist.
-    if (length(p_h) > nmax || isempty(refine_triangle) || rhoS_glob < eps)
+    if (length(p_h) > nmax || isempty(refine_triangle) || rhoS_glob < eps...
+            || recursion_depth == recmax)
+        length(p_h)
         fprintf('%s %f.\n','Die Rekursionstiefe ist ',recursion_depth);
         break;
     else

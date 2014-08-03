@@ -1,4 +1,4 @@
-function rho_p = eval_rho_p(nodes,triangles,midpoints,midtri,u_S,eps_V,fun)
+function rho_E = eval_rho_E(nodes,triangles,midpoints,midtri,u_S,eps_V,fun)
 %EVAL_RHO_P berechnet den lokalen Anteil rho_P von rho_S. Mitgegeben werden
 %die Knoten (Punkte) nodes, die Dreiecke triangles, sowie die 
 %Kantenmittelpunkte midpoints und die Kantenmittelpunkt-Dreiecks-Zuordnung
@@ -8,34 +8,31 @@ function rho_p = eval_rho_p(nodes,triangles,midpoints,midtri,u_S,eps_V,fun)
 %Problems.
 
 % Initialisierung verwendeter Größen:
-np = size(nodes,2);
 nmp = size(midpoints,2);
-rho_p = zeros(np,1);
+rho_E = zeros(nmp,1);
 
-% Hut- und Bubble-Funktionen:
-phi_P = @(xi,eta) [1-xi-eta; xi; eta];
+% Bubble-Funktionen:
 phi_E = @(xi,eta) [4*xi.*(1-xi-eta); 4*xi.*eta; 4*eta.*(1-xi-eta)];
 % Berechnung der Gewichte und Funktionswerte für das Flächenintegral:
 [wi,~,phi_E_values] = quad_tri([0,1,0;0,0,1],phi_E,7);
-[~,~,phi_P_values] = quad_tri([0,1,0;0,0,1],phi_P,7);
         
 % lokale Gewichte & Stützstellen für die Gaußquadratur für das Kurvenint.:
 %wi_local = [1,1];
 nodes_local = [-sqrt(1/3),sqrt(1/3)];
-phiPE_local = @(xi) (xi+1)/2.*(-xi.^2+1); % (-xi+1)/2.*(-xi.^2+1)];
-local_phiPE_int = sum(phiPE_local(nodes_local));
+phiE_local = @(xi) (-xi.^2+1).^2;
+local_phiE_int = sum(phiE_local(nodes_local));
 
-for k = 1:np
-    % Zuordnung Dreieck <-> Ref-Fkt & Träger von phi_P, d.h. Dreiecksindizes
-    [phi_p_local,w_p] = find(triangles(1:3,:)==k);
+for k = 1:nmp
+    % Zuordnung Dreieck <-> Ref-Fkt & Träger von phi_E, d.h. Dreiecksindizes
+    [phi_E_local,w_E] = find(triangles(1:3,:)==k);
     % Kantenindizes der jeweiligen Dreiecke
-    E_index = midtri(:,w_p);
+    E_index = midtri(:,w_E);
     
     % Berechnung des Flächenintegrals von rho_p über w_p:
-    for j = 1:length(w_p)
+    for j = 1:length(w_E)
         % Punkte des jeweiligen Dreiecks, auf dem wir uns befinden, mit
         % Jacobi-Determinante:
-        mypoi = nodes(:,triangles(1:3,w_p(j)));
+        mypoi = nodes(:,triangles(1:3,w_E(j)));
         x = mypoi(1,:);
         y = mypoi(2,:);
         J = (x(2)-x(1))*(y(3)-y(1))-(x(3)-x(1))*(y(2)-y(1));
@@ -43,29 +40,22 @@ for k = 1:np
         eps_V_local = eps_V(E_index(:,j));
         [~,gauss,~] = quad_tri(mypoi,@(x,y) 0,7);
         % die Funktionswerte der jeweiligen lokalen Hutfunktion phi_P:
-        phi_Pl_values = phi_P_values(phi_p_local(j),:);
+        phi_El_values = phi_E_values(phi_E_local(j),:);
         % die Berechnung des ersten Integrals von rho_p:
-        rho_p(k) = rho_p(k) + J * sum(wi.*fun(gauss(1,:),gauss(2,:)).*...
-            (eps_V_local'*phi_E_values).*(phi_Pl_values));
+        rho_E(k) = rho_E(k) + J * sum(wi.*fun(gauss(1,:),gauss(2,:)).*...
+            (eps_V_local'*phi_E_values).*(phi_El_values));
     end
     
-    % Berechnung des Kurvenintegrals über die Kanten E\in E_p:
-        % Berechnung der Menge von Kanten E_p auf denen der Punkt P liegt:
-        my_midpoints = [midpoints(3:4,:);zeros(1,nmp)];
-        help_Ep = find(my_midpoints==k);
-        E_p = ceil(help_Ep/3);
+    % Berechnung des Kurvenintegrals über die Kanten E:
+    % Berechnung der Nachbarn von Kante E:
+    [neighbours,flag] = neighbourhood(j,midtri,'edges');
     
-        % Berechnung der Nachbarn vom Kanten-Set E_p:
-        [neighbours,flag] = neighbourhood(E_p,midtri,'edges');
-        
-        % Berechnung des Integrals mittels Gaußquadratur:
-        for i = 1:length(E_p)
-            % Berechnung der Kantenpunkte:
-            edge_poi_ind = midpoints(3:4,E_p(i));
-            edge_poi = nodes(:,edge_poi_ind);
-            
-            % Berechnung der Gradienten von u_S auf T_1 und T_2:
-            neigh_tri_ind = neighbours(:,i);
+    % Berechnung der Kantenpunkte:
+    edge_poi_ind = midpoints(3:4,j);
+    edge_poi = nodes(:,edge_poi_ind);
+    
+    % Berechnung der Gradienten von u_S auf T_1 und T_2:
+            neigh_tri_ind = neighbours;
             neigh_tri = triangles(1:3,neigh_tri_ind);
             p_T = nodes(:,neigh_tri);
             uS_T = u_S(neigh_tri);
@@ -74,7 +64,7 @@ for k = 1:np
             p_T2 = p_T(:,4:6);
             uS_T1 = uS_T(:,1);
             
-            if flag(i) == 0
+            if flag == 0
                 uS_T2 = zeros(3,1);
             else
                 uS_T2 = uS_T(:,2);
@@ -102,14 +92,13 @@ for k = 1:np
             % und Multiplikation mit der Funktionaldeterminante bzgl. des
             % Kurvenintegrals:
             laenge = norm(edge_poi(:,1)-edge_poi(:,2));
-            global_phiPE_int = local_phiPE_int*1/2*laenge;
-            
-            % Bestimmung des Funktionswertes von eps_V(x_E):
-            epsV_loc = eps_V(E_p(i));
-            
-            % Hinzufügen der Kurvenintegrale zur rho_p:
-            rho_p(k) = rho_p(k)+j_E*epsV_loc*global_phiPE_int;
-        end
+            global_phiE_int = local_phiE_int*1/2*laenge;
+    
+    % Bestimmung des Funktionswertes von eps_V(x_E):
+    epsV_loc = eps_V(j);
+    
+    % Hinzufügen der Kurvenintegrale zur rho_E:
+    rho_E(k) = rho_E(k)+j_E*epsV_loc*global_phiE_int;
 end
 
 end
