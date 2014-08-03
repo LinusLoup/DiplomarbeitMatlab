@@ -21,7 +21,7 @@ h = 2;
 refine_triangle = [];
 u_S = [];
 recursion_depth = 1;    % Rekursionstiefe
-recmax = 20;            % maximale Rekursionstiefe
+recmax = 4;            % maximale Rekursionstiefe
 nmax = 1500;            % maximale Anzahl der verwendeten Punkte
 eps = 0.01;             % obere Grenze für hierarchischen Fehlerschätzer
 theta = 0.3;            % Schranke für lokalen und globalen Anteil vom FS
@@ -141,6 +141,7 @@ while 1
 
     % Berechnen der Mengen N0, N0+, N+, N++, N0- für die Oszillationsterme:
     N0_set = N0(u_S,z_obs_prob);
+    Nplus_set = Nplus(N0_set,p);
     N0plus_set = N0plus(N0_set,obstacle,p,t,u_S);
     
     % Berechnnung der Oszillationsterme:
