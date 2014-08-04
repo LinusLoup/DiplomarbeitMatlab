@@ -6,14 +6,14 @@ data = load('mysquare.mat');    %Quadrat: [-1,1]^2
 %fun = @(x,y) zeros(1,length(x));
 
 % konstante Lastfunktion:
-fun = @(x,y) -5*ones(1,length(x));
-data_exact = load('u_exact_const_f.mat');
-J_u = data_exact.fval;
+% fun = @(x,y) -5*ones(1,length(x));
+% data_exact = load('u_exact_const_f.mat');
+% J_u = data_exact.fval;
 
 % Parabelförmige Lastfunktion:
-% fun = @(x,y) -15*x.^2-8*y.^2;
-% data_exact = load('u_exact_parabel_f.mat');
-% J_u = data_exact.fval;
+fun = @(x,y) -18*x.^2-5*y.^2;
+data_exact = load('u_exact_parabel_f.mat');
+J_u = data_exact.fval;
 
 %fun = @(x,y) -3*x.^2-5*y.^2;
 

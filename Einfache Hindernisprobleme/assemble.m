@@ -11,6 +11,11 @@ np = size(points,2);
 nt = size(triangle,2);
 nmp = size(midpoints,2);
 
+if nargin == 4
+    option = 'linear';
+    u_S = zeros(np,1);
+end
+
 if nargin == 5
     u_S = zeros(np,1);
 end
