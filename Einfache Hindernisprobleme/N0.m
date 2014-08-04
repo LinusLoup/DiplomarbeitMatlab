@@ -9,6 +9,6 @@ function N0_set = N0(uS_values,obstacle_values)
 %N0_set ist die Menge der Indizes der Punkte P, in denen u_S(P) = phi(P)
 %gilt.
 
-N0_set = find(uS_values == obstacle_values);
+N0_set = find(abs(uS_values - obstacle_values) < 0.0001);
 
 end

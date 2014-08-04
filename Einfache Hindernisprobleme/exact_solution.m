@@ -14,7 +14,7 @@ tic;
 
 z_obs_prob = obstacle(p(1,:),p(2,:));
 
-[A,f] = assempde(b,p,e,t,1,0,-5);
+[A,f] = assempde(b,p,e,t,1,0,fun);
 [~,~,H,R]=assemb(b,p,e);
 
 [u,fval] = quadprog(A,-f,[],[],H,R,z_obs_prob,[]);

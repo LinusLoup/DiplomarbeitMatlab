@@ -4,10 +4,17 @@ data = load('mysquare.mat');    %Quadrat: [-1,1]^2
 
 %% Lastfunktion f:
 %fun = @(x,y) zeros(1,length(x));
+
+% konstante Lastfunktion:
 fun = @(x,y) -5*ones(1,length(x));
 data_exact = load('u_exact_const_f.mat');
 J_u = data_exact.fval;
-%fun = @(x,y) 9*(-x.^2-y.^2);
+
+% Parabelförmige Lastfunktion:
+% fun = @(x,y) -15*x.^2-8*y.^2;
+% data_exact = load('u_exact_parabel_f.mat');
+% J_u = data_exact.fval;
+
 %fun = @(x,y) -3*x.^2-5*y.^2;
 
 
@@ -20,14 +27,16 @@ h = 2;
 %% globale Initialisierungen:
 refine_triangle = [];
 u_S = [];
-recursion_depth = 1;    % Rekursionstiefe
-recmax = 4;            % maximale Rekursionstiefe
-nmax = 1500;            % maximale Anzahl der verwendeten Punkte
-eps = 0.01;             % obere Grenze für hierarchischen Fehlerschätzer
-theta = 0.3;            % Schranke für lokalen und globalen Anteil vom FS
-rhoS_plot = zeros(20,1);% Vektor von rho_S in allen Rekursionsschritten
-IQ_plot = zeros(20,1);  % Vektor mit dem hierarchischen Fehler -I_Q(eps_V)
-J_error = zeros(20,1);  % Vektor mit Fehler zwischen den Funktionalen
+recursion_depth = 1;        % Rekursionstiefe
+recmax = 20;                % maximale Rekursionstiefe
+nmax = 2500;                % maximale Anzahl der verwendeten Punkte
+eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
+theta = 0.3;                % Schranke für lokalen und globalen Anteil vom FS
+rhoS_plot = zeros(recmax,1);% Vektor von rho_S in allen Rekursionsschritten
+IQ_plot = zeros(recmax,1);  % Vektor mit dem hierarchischen Fehler -I_Q(eps_V)
+J_error = zeros(recmax,1);  % Vektor mit Fehler zwischen den Funktionalen
+osc_term = zeros(recmax,1); % Vektor mit den Oszillationstermen
+
 
 tic
 
@@ -48,9 +57,6 @@ while 1
     z_obs_prob = obstacle(p(1,:),p(2,:));
     z_obs_midpoints = obstacle(midpoints(1,:),midpoints(2,:));
 
-%     if recursion_depth == 1
-%         [u,fval] = exact_solution(data.mysquareg,data.mysquareb,p,e,t,fun,obstacle);
-%     end
 
     %% Assemblierung der Daten mit Berechnung der Dirichlet-Randdaten: 
     [A,f] = assemble(p,t,fun,7,'linear');
@@ -147,7 +153,7 @@ while 1
     % Berechnnung der Oszillationsterme:
     osc1_term = osc1(N0plus_set,z_obs_prob,p,t,u_S);
     
-    osc_term = osc1_term;
+    osc_term(recursion_depth) = osc1_term;
 
     % Bestimmung der zu verfeinernden Dreiecke:
     refine_triangle = find_triangle_refinement(rho_p,rhoS_glob,t,theta);
@@ -177,9 +183,10 @@ end
 toc
 
 %% Eliminieren der Nullen aus dem Vektoren der Fehler/-schätzer:
-rhoS_plot = setdiff(rhoS_plot,0,'stable');
-IQ_plot = setdiff(IQ_plot,0,'stable');
-J_error = setdiff(J_error,0,'stable');
+rhoS_plot = rhoS_plot(1:recursion_depth);
+IQ_plot = IQ_plot(1:recursion_depth);
+J_error = J_error(1:recursion_depth);
+osc_term = osc_term(1:recursion_depth);
 
 
 %% Plot vom Gitter, Eck- sowie Mittelpunkten:
