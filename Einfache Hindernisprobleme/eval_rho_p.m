@@ -9,7 +9,6 @@ function rho_p = eval_rho_p(nodes,triangles,midpoints,midtri,u_S,eps_V,fun)
 
 % Initialisierung verwendeter Größen:
 np = size(nodes,2);
-nmp = size(midpoints,2);
 rho_p = zeros(np,1);
 
 % Hut- und Bubble-Funktionen:
@@ -51,52 +50,15 @@ for k = 1:np
     
     % Berechnung des Kurvenintegrals über die Kanten E\in E_p:
         % Berechnung der Menge von Kanten E_p auf denen der Punkt P liegt:
-        my_midpoints = [midpoints(3:4,:);zeros(1,nmp)];
-        help_Ep = find(my_midpoints==k);
-        E_p = ceil(help_Ep/3);
+        [~,E_p] = find(midpoints(3:4,:)==k);
     
-        % Berechnung der Nachbarn vom Kanten-Set E_p:
-        [neighbours,flag] = neighbourhood(E_p,midtri,'edges');
-        
-        % Berechnung des Integrals mittels Gaußquadratur:
-        for i = 1:length(E_p)
+        % Berechnung der Normalenflüsse für alle Kanten aus E_p:
+        j_E = normal_flux(E_p,nodes,triangles,midpoints,midtri,u_S);
+
+        for i = 1:length(E_p)    
             % Berechnung der Kantenpunkte:
             edge_poi_ind = midpoints(3:4,E_p(i));
             edge_poi = nodes(:,edge_poi_ind);
-            
-            % Berechnung der Gradienten von u_S auf T_1 und T_2:
-            neigh_tri_ind = neighbours(:,i);
-            neigh_tri = triangles(1:3,neigh_tri_ind);
-            p_T = nodes(:,neigh_tri);
-            uS_T = u_S(neigh_tri);
-            
-            p_T1 = p_T(:,1:3);
-            p_T2 = p_T(:,4:6);
-            uS_T1 = uS_T(:,1);
-            
-            if flag(i) == 0
-                uS_T2 = zeros(3,1);
-            else
-                uS_T2 = uS_T(:,2);
-            end
-            
-            graduS_T = [gradu(p_T1,uS_T1);gradu(p_T2,uS_T2)];
-            
-            % Berechnung des Normalenvektors zwischen T_1 und T_2:
-            connect = edge_poi(:,2)-edge_poi(:,1);
-            orth_connect = [-connect(2);connect(1)];
-            n = 1/norm(orth_connect)*orth_connect;
-            
-                % Test, ob n von T_1 nach T_2 zeigt:
-            p3_T1 = setdiff(p_T1',edge_poi','rows')';
-            edge_test = (p3_T1-edge_poi(:,1))';
-            
-            if edge_test*n > 0
-                n = -n;
-            end
-            
-            % Der Normalenfluß j_E:
-            j_E = normal_flux(graduS_T,n);
             
             % Transformation des lokalen Integrals auf die globale Kante
             % und Multiplikation mit der Funktionaldeterminante bzgl. des
@@ -108,7 +70,7 @@ for k = 1:np
             epsV_loc = eps_V(E_p(i));
             
             % Hinzufügen der Kurvenintegrale zur rho_p:
-            rho_p(k) = rho_p(k)+j_E*epsV_loc*global_phiPE_int;
+            rho_p(k) = rho_p(k)+j_E(i)*epsV_loc*global_phiPE_int;
         end
 end
 

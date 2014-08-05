@@ -8,15 +8,13 @@ function [neighbours,flag] = neighbourhood(edges_or_point,triangles,option)
 
 n = length(edges_or_point);
 flag = zeros(1,n);
-my_triangle = [triangles(1:3,:);zeros(1,size(triangles,2))];
 
 switch lower(option)
     case {'edge','edges'}
         neighbours = zeros(2,n);
 
         for i = 1:n
-            help_index = find(my_triangle==edges_or_point(i));
-            neighbours(:,i) = ceil(help_index/4);
+            [~,neighbours(:,i)] = find(triangles==edges_or_point(i));
     
             if neighbours(1,i) ~= neighbours(2,i)
                 flag(i) = 1;
@@ -24,6 +22,5 @@ switch lower(option)
         end
         
     case {'point'}
-        help_index = find(my_triangle==edges_or_point);
-        neighbours = ceil(help_index/4);
+        [~,neighbours] = find(triangles(1:3,:)==edges_or_point);
 end

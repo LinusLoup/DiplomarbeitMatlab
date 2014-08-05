@@ -1,5 +1,5 @@
-function [eps_V_exact,a_phi] = exact_defect(points,triangle,mid_triangle,...
-    rho_s,u_S_mid,z_obs_midpoints)
+function [eps_V_exact,rho_E,d_E,a_phi] = exact_defect(points,triangle,...
+    mid_triangle,rho_s,u_S_mid,z_obs_midpoints)
     
     ntri = size(triangle,2);
     nmp = size(u_S_mid,1);
@@ -21,7 +21,6 @@ for i = 1 : nmp
     a = ((x(3)-x(1))^2 + (y(3)-y(1))^2);
     b = -((y(2)-y(1))*(y(3)-y(1)) + (x(2)-x(1))*(x(3)-x(1)));
     c = ((x(2)-x(1))^2 + (y(2)-y(1))^2);
-    %grad_u_S = gradu(poi,u_S(triangle(1:3,triangle_ind)));
     
     [wi,~,val_dxi_bubble] = quad_tri(poi,dxi_bubble,7);
     [~,~,val_deta_bubble] = quad_tri(poi,deta_bubble,7);

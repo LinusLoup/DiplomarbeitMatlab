@@ -6,14 +6,14 @@ data = load('mysquare.mat');    %Quadrat: [-1,1]^2
 %fun = @(x,y) zeros(1,length(x));
 
 % konstante Lastfunktion:
-% fun = @(x,y) -5*ones(1,length(x));
-% data_exact = load('u_exact_const_f.mat');
-% J_u = data_exact.fval;
+fun = @(x,y) -5*ones(size(x));
+data_exact = load('u_exact_const_f.mat');
+J_u = data_exact.fval;
 
 % Parabelförmige Lastfunktion:
-fun = @(x,y) -18*x.^2-5*y.^2;
-data_exact = load('u_exact_parabel_f.mat');
-J_u = data_exact.fval;
+% fun = @(x,y) -18*x.^2-5*y.^2;
+% data_exact = load('u_exact_parabel_f.mat');
+% J_u = data_exact.fval;
 
 %fun = @(x,y) -3*x.^2-5*y.^2;
 
@@ -28,8 +28,8 @@ h = 2;
 refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
-recmax = 20;                % maximale Rekursionstiefe
-nmax = 2500;                % maximale Anzahl der verwendeten Punkte
+recmax = 11;                % maximale Rekursionstiefe
+nmax = 2000;                % maximale Anzahl der verwendeten Punkte
 eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
 theta = 0.3;                % Schranke für lokalen und globalen Anteil vom FS
 rhoS_plot = zeros(recmax,1);% Vektor von rho_S in allen Rekursionsschritten
@@ -112,15 +112,15 @@ while 1
     % Assemblierung der Matrix mit den Bubble-Fktn. und ASM:
     [A_Q,rhoS_phiE] = assemble(p,t,fun,7,'bubble',u_S);
     eps_V = quadprog(A_Q,-rhoS_phiE,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
+    
+    % Probe durch exakte Lösung laut (2.10):
+    [~,rho_E,d_E,~] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,...
+        z_obs_midpoints);
 
 
 % % Vergleich der ASM mit dem projektiven Jacobi-Verfahren:
 % eps_V_jac = projected_jacobi(A_Q,rhoS_phiE,z_obs_midpoints-u_S_mid,...
 %     rand(nmp,1),1e-15);
-% 
-% 
-% % Probe durch exakte Lösung laut (2.10):
-% [eps_V,a_phi] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,z_obs_midpoints);
 % 
 % err_eps_V_quad = norm(eps_V-eps_V_exact);
 % err_eps_V_jac = norm(eps_V_jac-eps_V_exact);
@@ -148,11 +148,13 @@ while 1
     % Berechnen der Mengen N0, N0+, N+, N++, N0- für die Oszillationsterme:
     N0_set = N0(u_S,z_obs_prob);
     Nplus_set = Nplus(N0_set,p);
-    N0plus_set = N0plus(N0_set,obstacle,p,t,u_S);
+    [N0plus_set,N0minus_set] = N0plusminus(N0_set,p,t,midpoints,midtri,...
+        fun,obstacle,u_S);
+    Nplusplus_set = Nplusplus(Nplus_set,midpoints,rho_E,d_E);
     
     % Berechnnung der Oszillationsterme:
     osc1_term = osc1(N0plus_set,z_obs_prob,p,t,u_S);
-    
+     
     osc_term(recursion_depth) = osc1_term;
 
     % Bestimmung der zu verfeinernden Dreiecke:
