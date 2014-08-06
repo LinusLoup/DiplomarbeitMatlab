@@ -29,7 +29,7 @@ refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
 recmax = 20;                % maximale Rekursionstiefe
-nmax = 2000;                % maximale Anzahl der verwendeten Punkte
+nmax = 3000;                % maximale Anzahl der verwendeten Punkte
 eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
 theta = 0.3;                % Schranke für lokalen und globalen Anteil vom FS
 rhoS_plot = zeros(recmax,1);% Vektor von rho_S in allen Rekursionsschritten
@@ -111,10 +111,10 @@ while 1
 
     % Assemblierung der Matrix mit den Bubble-Fktn. und ASM:
     [A_Q,rhoS_phiE] = assemble(p,t,fun,7,'bubble',u_S);
-    eps_V = quadprog(A_Q,-rhoS_phiE,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
+    %eps_V = quadprog(A_Q,-rhoS_phiE,[],[],[],[],z_obs_midpoints-u_S_mid,[]);
     
     % Probe durch exakte Lösung laut (2.10):
-    [~,rho_E,d_E,~] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,...
+    [eps_V,rho_E,d_E,~] = exact_defect(p,t,midtri,rhoS_phiE,u_S_mid,...
         z_obs_midpoints);
 
 
