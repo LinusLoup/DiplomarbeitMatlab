@@ -28,7 +28,7 @@ h = 2;
 refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
-recmax = 11;                % maximale Rekursionstiefe
+recmax = 3;                % maximale Rekursionstiefe
 nmax = 2000;                % maximale Anzahl der verwendeten Punkte
 eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
 theta = 0.3;                % Schranke für lokalen und globalen Anteil vom FS
@@ -154,7 +154,7 @@ while 1
     
     % Berechnnung der Oszillationsterme:
     osc1_term = osc1(N0plus_set,z_obs_prob,p,t,u_S);
-     
+    osc2_term = osc2(Nplusplus_set,N0minus_set,p,t,midpoints,fun)
     osc_term(recursion_depth) = osc1_term;
 
     % Bestimmung der zu verfeinernden Dreiecke:
@@ -192,7 +192,9 @@ osc_term = osc_term(1:recursion_depth);
 
 
 %% Plot vom Gitter, Eck- sowie Mittelpunkten:
-subplot(3,3,1);pdemesh(p,e,t);
+figure(1)
+subplot(2,2,1);pdemesh(p,e,t);
+title('Nummerierung der Ecken und Dreiecke','FontSize',12);
 
 for j = 1 : ntri
     tri = t(1:3,j);
@@ -206,7 +208,8 @@ for i = 1 : np
 end
 
 
-subplot(3,3,2);pdemesh(p,e,t);
+subplot(2,2,2);pdemesh(p,e,t);
+title('Nummerierung der Kanten/Mittelpunkte','FontSize',12);
 
 for j = 1 : ntri
     tri = midtri(1:3,j);
@@ -220,15 +223,18 @@ for i = 1 : length(midpoints)
 end
 
 %% Plot des Hindernisses:
+figure(2);
 [x,y] = meshgrid(-1:0.1:1,-1:0.1:1);
 %z_obs = -x.^2-y.^2+0.3;
 z_obs = obstacle(x,y);
 
-subplot(3,3,3);surf(x,y,z_obs);
+subplot(2,1,1);surf(x,y,z_obs);
+title('Hindernis','FontSize',15);
 
 
 %% Plot der Lösungen:
-subplot(3,3,4:9); pdeplot(p,e,t,'zdata',u_S);
+subplot(2,1,2); pdeplot(p,e,t,'zdata',u_S);
+title('Lösung des Hindernisproblems','FontSize',15)
 
 
 %% Ausgabe der Eigenwerte und Berechnung der Determinanten von A:
