@@ -28,7 +28,7 @@ h = 2;
 refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
-recmax = 20;                % maximale Rekursionstiefe
+recmax = 3;                % maximale Rekursionstiefe
 nmax = 2000;                % maximale Anzahl der verwendeten Punkte
 eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
 theta = 0.3;                % Schranke für lokalen und globalen Anteil vom FS
@@ -225,8 +225,8 @@ end
 %% Plot der Fehler:
 subplot(2,2,3:4);
 
-plot(1:recursion_depth,J_error,'--o',1:recursion_depth,osc_term,':x',...
-    1:recursion_depth,IQ_plot,'-.*');
+plot(1:recursion_depth,J_error,':o',1:recursion_depth,osc_term,'x',...
+    1:recursion_depth,IQ_plot,'*');
 %axis([0.5,recursion_depth+0.5,-2,2]);
 
 %% Plot des Hindernisses:
