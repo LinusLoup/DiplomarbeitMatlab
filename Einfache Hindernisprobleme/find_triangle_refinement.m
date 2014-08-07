@@ -13,7 +13,7 @@ counter = 1;
 %% Berechnung der Punkte, deren lokaler Fehleranteil zur Verfeinerung führt:
 while 1
     new_rho = max(rho_p);
-    new_point = find(rho_p == new_rho);
+    new_point = find(abs(rho_p - new_rho)<0.001);
     rho_p(new_point) = 0;
     number_new_points = length(new_point);
     rho_local(counter) = number_new_points * new_rho;

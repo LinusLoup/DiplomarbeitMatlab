@@ -1,4 +1,5 @@
-function osc1_val = osc1(N0plus_set,obstacle_values,nodes,triangles,uS_values)
+function [osc1_val,osc1_vec] = osc1(N0plus_set,obstacle_values,nodes,...
+    triangles,uS_values)
 %OSC1 berechnet die Hindernisoszillation osc_1(u_S,phi), d.h. von der
 %approximativen Lösung u_S und dem Hindernis psi abhängig.
 %
@@ -7,7 +8,7 @@ function osc1_val = osc1(N0plus_set,obstacle_values,nodes,triangles,uS_values)
 
 
 %% Initialierung:
-osc1_val = 0;
+osc1_vec = zeros(length(nodes),1);
 
 %% Berechnung der Summe über die Punkte aus N0+:
 for i = 1:length(N0plus_set)
@@ -46,10 +47,10 @@ for i = 1:length(N0plus_set)
                 *grad_u(2))+c*grad_u(2)^2);
     end
     
-    osc1_val = osc1_val + int_h;
+    osc1_vec(N0plus_set(i)) = int_h;
 end
 
 % Wurzel ziehen aus der Summe der Integrale:
-osc1_val = sqrt(osc1_val);
+osc1_val = sqrt(sum(osc1_vec));
 
 end

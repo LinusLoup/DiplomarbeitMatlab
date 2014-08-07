@@ -1,40 +1,33 @@
-function osc2_val = osc2(Nplusplus_set,N0minus_set,nodes,triangles,...
-    edges,f_load)
+function [osc2_val,osc2_vec] = osc2(Nplusplus_set,N0minus_set,nodes,...
+    triangles,edges,f_load)
 %OSC2 berechnet den zweiten Oszillationsterm osc2(u_S,psi,f).
 
 
 %% Initialisierung:
-osc2_val = 0;
-osc2_sum1 = 0;
-osc2_sum2 = 0;
 np = length(nodes);
+osc2_vec = zeros(np,1);
 N_set = 1:np;
 N_sum2 = setdiff(N_set,union(Nplusplus_set,N0minus_set));
-h_P1 = zeros(size(Nplusplus_set));
-h_P2 = zeros(size(N_sum2));
 
 %% Berechnung der h_P für die beiden Summen:
-for i = 1:length(h_P1)
-    % Berechnnung der Kanten, auf denen P liegt:
-    [~,E_p] = find(edges(3:4,:)==Nplusplus_set(i));
+    function h_P = eval_hP(set,global_nodes,global_edges)
+        % Initialisierung:
+        h_P = zeros(size(set));
+        
+        for l = 1:length(h_P)
+        % Berechnnung der Kanten, auf denen P liegt:
+        [~,E_p] = find(global_edges(3:4,:)==set(l));
     
-    % Berechnung der Längen von E \in E_p:
-    points_1 = nodes(:,edges(3,E_p));
-    points_2 = nodes(:,edges(4,E_p));
-    points_diff = points_1 - points_2;
-    h_P1(i) = max(sqrt(points_diff(1,:).^2 + points_diff(2,:).^2));
-end
+        % Berechnung der Längen von E \in E_p:
+        points_1 = global_nodes(:,global_edges(3,E_p));
+        points_2 = global_nodes(:,global_edges(4,E_p));
+        points_diff = points_1 - points_2;
+        h_P(l) = max(sqrt(points_diff(1,:).^2 + points_diff(2,:).^2));
+        end
+    end
 
-for i = 1:length(h_P2)
-    % Berechnnung der Kanten, auf denen P liegt:
-    [~,E_p] = find(edges(3:4,:)==N_sum2(i));
-    
-    % Berechnung der Längen von E \in E_p:
-    points_1 = nodes(:,edges(3,E_p));
-    points_2 = nodes(:,edges(4,E_p));
-    points_diff = points_1 - points_2;
-    h_P2(i) = max(sqrt(points_diff(1,:).^2 + points_diff(2,:).^2));
-end
+h_P1 = eval_hP(Nplusplus_set,nodes,edges);
+h_P2 = eval_hP(N_sum2,nodes,edges);
 
 
 %% Berechnung der Summen:
@@ -78,7 +71,7 @@ for i = 1:length(Nplusplus_set)
             -f_P).^2);
     end
     
-    osc2_sum1 = osc2_sum1 + h_P1(i)^2*int_h;
+    osc2_vec(Nplusplus_set(i)) = osc2_vec(Nplusplus_set(i))+h_P1(i)^2*int_h;
 end
 
 for i = 1:length(N_sum2)
@@ -100,9 +93,9 @@ for i = 1:length(N_sum2)
         int_h = int_h + J * sum(wi.*f_load(gauss(1,:),gauss(2,:)).^2);
     end
     
-    osc2_sum2 = osc2_sum2 + h_P2(i)^2*int_h;
+    osc2_vec(N_sum2(i)) = osc2_vec(N_sum2(i))+h_P2(i)^2*int_h;
 end
 
-osc2_val = osc2_val + sqrt(osc2_sum1 + osc2_sum2);
+osc2_val = sqrt(sum(osc2_vec));
 
 end

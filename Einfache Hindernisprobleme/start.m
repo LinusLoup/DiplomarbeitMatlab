@@ -22,13 +22,13 @@ J_u = data_exact.fval;
 h = 2;
 %[p,e,t] = initmesh(data.mycircleg,'Hmax',h);   %Einheitskreis
 [p,e,t] = initmesh(data.mysquareg,'Hmax',h);    %Quadrat: [-1,1]^2
-
+[p,e,t] = refinemesh(data.mysquareg,p,e,t);
 
 %% globale Initialisierungen:
 refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
-recmax = 20;                % maximale Rekursionstiefe
+recmax = 3;                % maximale Rekursionstiefe
 nmax = 3000;                % maximale Anzahl der verwendeten Punkte
 eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
 theta = 0.3;                % Schranke für lokalen und globalen Anteil vom FS
@@ -153,13 +153,12 @@ while 1
     Nplusplus_set = Nplusplus(Nplus_set,midpoints,rho_E,d_E);
     
     % Berechnnung der Oszillationsterme:
-    osc1_term = osc1(N0plus_set,z_obs_prob,p,t,u_S);
-    osc2_term = osc2(Nplusplus_set,N0minus_set,p,t,midpoints,fun);
+    [osc1_term,osc1_local] = osc1(N0plus_set,z_obs_prob,p,t,u_S);
+    [osc2_term,osc2_local] = osc2(Nplusplus_set,N0minus_set,p,t,midpoints,fun);
     osc_term(recursion_depth) = osc1_term + osc2_term;
 
     % Bestimmung der zu verfeinernden Dreiecke:
     refine_triangle = find_triangle_refinement(rho_p,rhoS_glob,t,theta);
-%    refine_triangle = find_triangle_refinement(rho_E,rhoS_glob,midtri,theta);
    
     %% Verfeinerung des Gitters:
     [p_h,e_h,t_h,uS_h] = refinemesh(data.mysquareg,p,e,t,u_S,refine_triangle);
@@ -250,7 +249,7 @@ eig_val = eig(A);
 detA = det(A);
 
 % Elimination von Rundungsfehlern in der Determinante von A:
-if ~isempty(find(abs(eig_val) < 1e-14, 1))
+if ~isempty(find(abs(eig_val) < 1e-10, 1))
     detA=0;
 end
 
