@@ -6,14 +6,14 @@ data = load('mysquare.mat');    %Quadrat: [-1,1]^2
 %fun = @(x,y) zeros(1,length(x));
 
 % konstante Lastfunktion:
-fun = @(x,y) -5*ones(size(x));
-data_exact = load('u_exact_const_f.mat');
-J_u = data_exact.fval;
+% fun = @(x,y) -5*ones(size(x));
+% data_exact = load('u_exact_const_f.mat');
+% J_u = data_exact.fval;
 
 % Parabelförmige Lastfunktion:
-% fun = @(x,y) -18*x.^2-5*y.^2;
-% data_exact = load('u_exact_parabel_f.mat');
-% J_u = data_exact.fval;
+fun = @(x,y) -18*x.^2-5*y.^2;
+data_exact = load('u_exact_parabel_f.mat');
+J_u = data_exact.fval;
 
 %fun = @(x,y) -3*x.^2-5*y.^2;
 
@@ -28,10 +28,11 @@ h = 2;
 refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
-recmax = 3;                % maximale Rekursionstiefe
+recmax = 20;                % maximale Rekursionstiefe
 nmax = 3000;                % maximale Anzahl der verwendeten Punkte
 eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
-theta = 0.3;                % Schranke für lokalen und globalen Anteil vom FS
+theta_rho = 0.3;            % Schranke für lokalen und globalen Anteil vom FS
+theta_osc = 0.3;            % Schranke für lokalen zu globalem Anteil von Oszillation
 rhoS_plot = zeros(recmax,1);% Vektor von rho_S in allen Rekursionsschritten
 IQ_plot = zeros(recmax,1);  % Vektor mit dem hierarchischen Fehler -I_Q(eps_V)
 J_error = zeros(recmax,1);  % Vektor mit Fehler zwischen den Funktionalen
@@ -155,10 +156,12 @@ while 1
     % Berechnnung der Oszillationsterme:
     [osc1_term,osc1_local] = osc1(N0plus_set,z_obs_prob,p,t,u_S);
     [osc2_term,osc2_local] = osc2(Nplusplus_set,N0minus_set,p,t,midpoints,fun);
+    osc_local = osc1_local + osc2_local;
     osc_term(recursion_depth) = osc1_term + osc2_term;
 
     % Bestimmung der zu verfeinernden Dreiecke:
-    refine_triangle = find_triangle_refinement(rho_p,rhoS_glob,t,theta);
+    refine_triangle = find_triangle_refinement(rho_p,rhoS_glob,osc_local,...
+        osc_term(recursion_depth),t,theta_rho,theta_osc);
    
     %% Verfeinerung des Gitters:
     [p_h,e_h,t_h,uS_h] = refinemesh(data.mysquareg,p,e,t,u_S,refine_triangle);
