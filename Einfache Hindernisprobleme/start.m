@@ -1,19 +1,20 @@
 %% Laden der Geometriedaten:
 %data = load('mycircle.mat');   %Einheitskreis
-data = load('mysquare.mat');    %Quadrat: [-1,1]^2
+%data = load('square_with_unconst_dirichlet.mat');
+data = load('mysquare.mat');   %Quadrat: [-1,1]^2
 
 %% Lastfunktion f:
 %fun = @(x,y) zeros(1,length(x));
 
 % konstante Lastfunktion:
-% fun = @(x,y) -5*ones(size(x));
-% data_exact = load('u_exact_const_f.mat');
-% J_u = data_exact.fval;
+fun = @(x,y) -2*ones(size(x));
+data_exact = load('u_exact_const_f_new.mat');
+J_u = data_exact.fval;
 
 % Parabelförmige Lastfunktion:
-fun = @(x,y) -18*x.^2-5*y.^2;
-data_exact = load('u_exact_parabel_f.mat');
-J_u = data_exact.fval;
+% fun = @(x,y) -18*x.^2-5*y.^2;
+% data_exact = load('u_exact_parabel_f.mat');
+% J_u = data_exact.fval;
 
 %fun = @(x,y) -3*x.^2-5*y.^2;
 
@@ -29,7 +30,7 @@ refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
 recmax = 20;                % maximale Rekursionstiefe
-nmax = 2500;                % maximale Anzahl der verwendeten Punkte
+nmax = 3000;                % maximale Anzahl der verwendeten Punkte
 eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
 theta_rho = 0.3;            % Schranke für lokalen und globalen Anteil vom FS
 theta_osc = 0.3;            % Schranke für lokalen zu globalem Anteil von Oszillation
@@ -229,7 +230,8 @@ subplot(2,2,3:4);
 
 plot(1:recursion_depth,J_error,'--o',1:recursion_depth,osc_term,':x',...
     1:recursion_depth,IQ_plot,'-.*');
-%axis([0.5,recursion_depth+0.5,-2,2]);
+axis([0.5,recursion_depth+0.5,min([min(J_error),min(IQ_plot),min(osc_term)])...
+    -0.5,max([max(J_error),max(IQ_plot),max(osc_term)])+0.5]);
 
 %% Plot des Hindernisses:
 figure(2);

@@ -5,12 +5,12 @@ function [u,fval] = exact_solution(g,b,fun,obstacle,h)
 tic;
 
 [p,e,t] = initmesh(g,'Hmax',h);
-% [p,e,t] = refinemesh(g,p,e,t);
-% [p,e,t] = refinemesh(g,p,e,t);
-% [p,e,t] = refinemesh(g,p,e,t);
-% [p,e,t] = refinemesh(g,p,e,t);
-% [p,e,t] = refinemesh(g,p,e,t);
-% [p,e,t] = refinemesh(g,p,e,t);
+[p,e,t] = refinemesh(g,p,e,t);
+[p,e,t] = refinemesh(g,p,e,t);
+[p,e,t] = refinemesh(g,p,e,t);
+[p,e,t] = refinemesh(g,p,e,t);
+[p,e,t] = refinemesh(g,p,e,t);
+[p,e,t] = refinemesh(g,p,e,t);
 
 z_obs_prob = obstacle(p(1,:),p(2,:));
 
@@ -27,6 +27,6 @@ subplot(2,1,[1,2]);
 pdemesh(p,e,t,u);
 
 length(u)
-1/2*u'*A*u-u'*f
+1/2*u'*A*u-u'*f;
 
 end
