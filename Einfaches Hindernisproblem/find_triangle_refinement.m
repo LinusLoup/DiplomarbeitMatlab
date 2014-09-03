@@ -30,7 +30,7 @@ end
 
 counter = 1;
 
-while 1
+while 0
     new_osc = max(osc_local);
     new_point = find(abs(osc_local - new_osc)<0.001);
     osc_local(new_point) = 0;

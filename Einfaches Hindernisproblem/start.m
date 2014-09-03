@@ -39,10 +39,10 @@ refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
 recmax = 20;                % maximale Rekursionstiefe
-nmax = 6000;                % maximale Anzahl der verwendeten Punkte
-eps = 0.01;                 % obere Grenze für hierarchischen Fehlerschätzer
-theta_rho = 0.6;            % Schranke für lokalen und globalen Anteil vom FS
-theta_osc = 0.6;            % Schranke für lokalen zu globalem Anteil von Oszillation
+nmax = 12000;                % maximale Anzahl der verwendeten Punkte
+eps = 0.001;                % obere Grenze für hierarchischen Fehlerschätzer
+theta_rho = 0.1;            % Schranke für lokalen und globalen Anteil vom FS
+theta_osc = 0.3;            % Schranke für lokalen zu globalem Anteil von Oszillation
 rhoS_plot = zeros(recmax,1);% Vektor von rho_S in allen Rekursionsschritten
 IQ_plot = zeros(recmax,1);  % Vektor mit dem hierarchischen Fehler -I_Q(eps_V)
 J_error = zeros(recmax,1);  % Vektor mit Fehler zwischen den Funktionalen
@@ -79,7 +79,9 @@ while 1
 
     %% Lösung der Variationsungleichung mit Active-Set- und Jacobi-Verfahren:
     % Active-Set-Methode:
-    [u_S,J_uS] = quadprog(A,-f,[],[],H,R,z_obs_prob,[],u_S);
+    opts = optimset('Algorithm','interior-point-convex','LargeScale','on',...
+       'Display','off');
+    [u_S,J_uS] = quadprog(A,-f,[],[],H,R,z_obs_prob,[],u_S,opts);
 
 
 % % Eliminieren von Dirichletpunkten aus der Matrix für das Jacobi-Verfahren:
