@@ -48,6 +48,7 @@ IQ_plot = zeros(recmax,1);  % Vektor mit dem hierarchischen Fehler -I_Q(eps_V)
 J_error = zeros(recmax,1);  % Vektor mit Fehler zwischen den Funktionalen
 osc_term = zeros(recmax,1); % Vektor mit den Oszillationstermen
 
+nodes_vec = zeros(recmax,1);
 
 tic
 
@@ -55,6 +56,8 @@ while 1
     %% Initialisierungen:
     ntri = size(t,2);
     np = size(p,2);
+    
+    nodes_vec(recursion_depth) = np;
     
     %% Berechnung der Mittelpunkte:
     [midpoints,midtri] = midpoints_of_triangle(t,p);
@@ -174,7 +177,7 @@ while 1
 
     % Bestimmung der zu verfeinernden Dreiecke:
     refine_triangle = find_triangle_refinement(rho_p,rhoS_glob,osc_local,...
-        osc_term(recursion_depth),t,theta_rho,theta_osc);
+        osc_term(recursion_depth),t,theta_rho);
    
     %% Verfeinerung des Gitters:
     [p_h,e_h,t_h,uS_h] = refinemesh(data.mysquareg,p,e,t,u_S,refine_triangle);
@@ -183,8 +186,8 @@ while 1
     % falls die Anzahl der Ecken über nmax liegt oder kein Dreieck mehr
     % verfeinert wird oder der hierarchische Fehlerschätzer genügend klein 
     % ist.
-    if (length(p_h) > nmax || isempty(refine_triangle) || rhoS_glob < eps...
-            || recursion_depth == recmax)
+    if (isempty(refine_triangle) || rhoS_glob < eps)%...
+            %|| recursion_depth == recmax || length(p_h) > nmax)
         length(p_h)
         fprintf('%s %f.\n','Die Rekursionstiefe ist ',recursion_depth);
         break;
