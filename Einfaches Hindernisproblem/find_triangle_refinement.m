@@ -19,8 +19,8 @@ while 1
     new_points = find(abs(rho_p - new_rho)<0.001);
     rho_p(new_points) = 0;
     number_new_points = length(new_points);
-    rho_bound(counter) = number_new_points * new_rho+...
-        sqrt(sum(osc_local(new_points)));
+    rho_bound(counter) = number_new_points * new_rho;%+...
+        %sqrt(sum(osc_local(new_points)));
     point_index_rho(counter:counter+number_new_points-1) = new_points;
     counter = counter + number_new_points;
     

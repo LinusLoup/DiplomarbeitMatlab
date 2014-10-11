@@ -29,8 +29,8 @@ switch lower(option)
     
     
     %% Initialisierung der globalen Größen:
-    A = zeros(np,np);
-    f = zeros(np,1);
+    A = sparse(np,np);
+    f = sparse(np,1);
     my_tri = triangle(1:3,:);
     
     case {'bubble','quadratic'}
@@ -40,8 +40,8 @@ switch lower(option)
     
     
     %% Initialisierung der globalen Größen:
-    A = zeros(nmp,nmp);
-    f = zeros(nmp,1);
+    A = sparse(nmp,nmp);
+    f = sparse(nmp,1);
     my_tri = midtriangle;
     
 end

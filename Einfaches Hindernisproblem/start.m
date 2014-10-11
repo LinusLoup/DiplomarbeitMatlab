@@ -39,10 +39,10 @@ refine_triangle = [];
 u_S = [];
 recursion_depth = 1;        % Rekursionstiefe
 recmax = 20;                % maximale Rekursionstiefe
-nmax = 12000;                % maximale Anzahl der verwendeten Punkte
+nmax = 6000;                % maximale Anzahl der verwendeten Punkte
 eps = 0.001;                % obere Grenze für hierarchischen Fehlerschätzer
-theta_rho = 0.1;            % Schranke für lokalen und globalen Anteil vom FS
-theta_osc = 0.3;            % Schranke für lokalen zu globalem Anteil von Oszillation
+theta_rho = 0.6;            % Schranke für lokalen und globalen Anteil vom FS
+%theta_osc = 0.3;            % Schranke für lokalen zu globalem Anteil von Oszillation
 rhoS_plot = zeros(recmax,1);% Vektor von rho_S in allen Rekursionsschritten
 IQ_plot = zeros(recmax,1);  % Vektor mit dem hierarchischen Fehler -I_Q(eps_V)
 J_error = zeros(recmax,1);  % Vektor mit Fehler zwischen den Funktionalen
@@ -82,6 +82,8 @@ while 1
 
     %% Lösung der Variationsungleichung mit Active-Set- und Jacobi-Verfahren:
     % Active-Set-Methode:
+    u_S = sparse(u_S);
+    z_obs_prob = sparse(z_obs_prob);
     opts = optimset('Algorithm','interior-point-convex','LargeScale','on',...
        'Display','off');
     [u_S,J_uS] = quadprog(A,-f,[],[],H,R,z_obs_prob,[],u_S,opts);
@@ -186,8 +188,8 @@ while 1
     % falls die Anzahl der Ecken über nmax liegt oder kein Dreieck mehr
     % verfeinert wird oder der hierarchische Fehlerschätzer genügend klein 
     % ist.
-    if (isempty(refine_triangle) || rhoS_glob < eps)%...
-            %|| recursion_depth == recmax || length(p_h) > nmax)
+    if (isempty(refine_triangle) || rhoS_glob < eps...
+            || recursion_depth == recmax || length(p_h) > nmax)
         length(p_h)
         fprintf('%s %f.\n','Die Rekursionstiefe ist ',recursion_depth);
         break;
@@ -262,6 +264,7 @@ title('Hindernis','FontSize',15);
 
 
 %% Plot der Lösungen:
+u_S = full(u_S);
 subplot(2,1,2); pdeplot(p,e,t,'zdata',u_S);
 title('Lösung des Hindernisproblems','FontSize',15)
 
