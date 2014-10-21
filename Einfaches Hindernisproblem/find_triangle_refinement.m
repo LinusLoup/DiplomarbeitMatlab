@@ -25,7 +25,7 @@ while 1
     counter = counter + number_new_points;
     
     % Abbruchkriterium für die Punktesuche:
-    if sum(rho_bound) >= theta*upperbound
+    if sum(rho_bound) >= theta*rho_global
         break;
     end
 end
