@@ -1,10 +1,5 @@
 function [neighbours,flag] = neighbourhood(edges_or_point,triangles,option)
-%EDGE_NEIGHBOURHOOD berechnet die Dreiecksindizes, die zu mitgegebenen
-%Kanten edges, für ein Set aus Dreicken triangles, die Nachbarn sind.
-%
-%Der Vektor flag besteht hierbei aus Einsen und Nullen, um anzugeben,
-%welche Kanten nur einen Nachbar haben.
-%0: Es gibt nur einen Nachbarn; 1: Es gibt zwei Nachbarn.
+%EDGE_NEIGHBOURHOOD computes the indices of the triangles, which are the neighbours for the given edges or point. The vector flag shows, if an edge has got only one neighbour (flag = 0) or two (flag = 1).
 
 n = length(edges_or_point);
 flag = zeros(1,n);

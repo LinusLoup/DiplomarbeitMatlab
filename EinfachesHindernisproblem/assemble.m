@@ -1,12 +1,10 @@
 function [A,f] = assemble(points,triangle,fun,num_of_nodes,option,u_S)
-%ASSEMBLE Summary of this function goes here
-%   Detailed explanation goes here
+%ASSEMBLE evaluates the global matrix A and load vector f out of the given nodes, triangles, loadfunction, number of nodes and the Galerkin approximation u_S.
 
-
-%% neue Zuordnung: Dreicke <-> Mittelpunkte
+% ordering: triangles <-> midpoints:
 [midpoints,midtriangle] = midpoints_of_triangle(triangle,points);
 
-%% Initialisierungen der Dimensionen und Endergebnisse:
+% initialising the dimension and the solution:
 np = size(points,2);
 nt = size(triangle,2);
 nmp = size(midpoints,2);
@@ -20,53 +18,46 @@ if nargin == 5
     u_S = zeros(np,1);
 end
 
-
-%% Beginn der Assemblierung:
+% beginning of the assembling:
 switch lower(option)
     case {'linear'}
-    %% lineare Hutfunktionen auf dem Referenzelement:
+    % linear hatfunctionen on the reference-element:
     hat = @(xi,eta) [1-xi-eta; xi; eta];
     
-    
-    %% Initialisierung der globalen Größen:
+    % initialising of the global values:
     A = sparse(np,np);
     f = sparse(np,1);
     my_tri = triangle(1:3,:);
     
     case {'bubble','quadratic'}
-
-    %% bubble-Funktionen auf dem Referenzelement:
+    % bubblefunctionen on the reference-element:
     hat = @(xi,eta) [4*xi.*(1-xi-eta); 4*xi.*eta; 4*eta.*(1-xi-eta)];
     
-    
-    %% Initialisierung der globalen Größen:
+    % initialising of the global values:
     A = sparse(nmp,nmp);
     f = sparse(nmp,1);
     my_tri = midtriangle;
-    
 end
 
-%% Schleife über die Dreiecke zur Assemblierung:
+% loop over the triangles for the assembling:
 for i = 1:nt
     poi = points(:,triangle(1:3,i));
     u_S_loc = u_S(triangle(1:3,i));
     tri = my_tri(:,i);
     
-    %% Berechnung der lok.,lin. Steifigkeitsmatrix und der Fkt.-Determinante:
+    % evaluation of the local linear stiffness matrix and the Jacobian:
     [S,fl,J] = local_mat(poi,u_S_loc,option);
         
-    %% Berechnung des lokalen Vektors fl:
-    % Quadraturformeln von https://www-user.tu-chemnitz.de/~rens/lehre/...
-    % archiv/numerik1_11SS/folien/gaussxd.pdf
+    % Evaluating the local vector fl: (here is Gauss-quadrature over triangles used)
     [wi,gauss,ansatz_values] = quad_tri(poi,hat,num_of_nodes);
             
-    %Quadratur auf Dreieck:
+    % quadrature over a triangle:
     for k = 1:3
         fl(k) = fl(k)+J*sum(wi.*fun(gauss(1,:),gauss(2,:)).*...
             ansatz_values(k,:));
     end
     
-    %% Assemblierung in die globale Steifigkeitsmatrix A und den Vektor f:
+    % assembling into the global stiffness matrix A and the load vector f:
     for k = 1:3
         for l = 1:3
             A(tri(k),tri(l)) = A(tri(k),tri(l))+S(k,l);
