@@ -18,7 +18,11 @@ h = 2;
 % initialization of the global values:
 refine_triangle = [];
 u_S = [];
+<<<<<<< Updated upstream
 itermax = 2;         % maximum iteration depth
+=======
+itermax = 9;          % maximum iteration depth
+>>>>>>> Stashed changes
 nmax = 5000;          % maximum number of nodes
 eps = 0.01;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate

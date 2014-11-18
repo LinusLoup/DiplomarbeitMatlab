@@ -25,8 +25,8 @@ phi_P_values = phi_P(xi,eta);
 for i = 1:length(N0_set)
     % support of the shape function and index of the local shape function:
     [phi_p_local,w_p] = find(triangles(1:3,:)==N0_set(i));
-    flag_plus = 0;          % verification value for the condition of N0+
-    flag_minus = 0;         % verification value for the condition of N0-
+    flag_plus = 0;      % verification value for the condition of N0+
+    flag_minus = 0;     % verification value for the condition of N0-
     
     for j = 1:length(w_p)
         % vertices of the triangle and functionvalues of u_S:
