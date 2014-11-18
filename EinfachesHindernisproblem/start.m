@@ -18,7 +18,7 @@ h = 2;
 % initialization of the global values:
 refine_triangle = [];
 u_S = [];
-itermax = 20;          % maximum iteration depth
+itermax = 2;         % maximum iteration depth
 nmax = 5000;          % maximum number of nodes
 eps = 0.01;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate
@@ -31,7 +31,7 @@ toc
 
 % plot of the mesh with the nodes and midpoints/edges:
 figure(1)
-subplot(2,2,1);pdemesh(p,e,t);
+subplot(2,1,1);pdemesh(p,e,t);
 title('numbering of the nodes and triangles','FontSize',12);
 
 ntri = size(t,2);
@@ -48,7 +48,7 @@ for i = 1 : np
     text(p(1,i),p(2,i), num2str(i), 'FontSize',9);
 end
 
-subplot(2,2,2);pdemesh(p,e,t);
+subplot(2,1,2);pdemesh(p,e,t);
 title('numbering of the edges/midpoints','FontSize',12);
 
 for j = 1 : ntri
@@ -63,7 +63,7 @@ for i = 1 : length(midpoints)
 end
 
 % plot of the error and the error estimator:
-subplot(2,2,3:4);
+figure(2);
 plot(1:recursion_depth,J_error,'--o',1:recursion_depth,osc_term,':x',...
     1:recursion_depth,IQ_plot,'-.*');
 ymin = min([min(J_error),min(IQ_plot),min(osc_term)])-10;
@@ -73,8 +73,12 @@ legend('functional error','oscillations','estimated error','location',...
     'best');
 
 % plot of the solution:
-figure(2);
 u_S = full(u_S);
-subplot(2,1,1); pdeplot(p,e,t,'xydata',u_S,'zdata',u_S,'mesh','on');
-subplot(2,1,2); pdeplot(p,e,t,'zdata',u_S);
+
+figure(3);
+pdeplot(p,e,t,'xydata',u_S,'zdata',u_S,'mesh','on');
+title('solution of the obstacle problem','FontSize',15)
+
+figure(4);
+pdeplot(p,e,t,'zdata',u_S);
 title('solution of the obstacle problem','FontSize',15)
