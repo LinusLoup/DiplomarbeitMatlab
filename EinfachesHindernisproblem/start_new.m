@@ -1,26 +1,64 @@
+function start_new
+
 clear 
 clear all 
 clc
 
 % loading of the geometry data (non-constant boundary):
-data = load('square_with_unconst_dirichlet.mat');
+data = load('mylshape.mat');
 % loadfunction f (here contant):
-fun = @(x,y) -2*ones(size(x));
-% loading the exakt data for the given problem:
-data_exact = load('fval_log_u.mat');
-J_u = data_exact.fval;
+    function z = my_fun(x,y)
+        [m,n] = size(x);
+        z = zeros(m,n);
+        r = sqrt(x.^2+y.^2);
+        r_new = 2*r-1/2;
+        
+        index_gamma1 = find(sqrt(x.^2+y.^2)>=1/4 & sqrt(x.^2+y.^2)<3/4 & y>=0);
+        
+        z(index_gamma1) = -(r(index_gamma1)).^(2/3)...
+            .*sin(2/3*atan2(y(index_gamma1),x(index_gamma1)))...
+            .*(1./r(index_gamma1).*(-60*r_new(index_gamma1).^4+120*...
+            r_new(index_gamma1).^3-60*r_new(index_gamma1).^2)+(-480*...
+            r_new(index_gamma1).^3+720*r_new(index_gamma1).^2-240*...
+            r_new(index_gamma1)))-4/3*r(index_gamma1).^(1/3).*(-60*...
+            r_new(index_gamma1).^4+120*r_new(index_gamma1).^3-60*...
+            r_new(index_gamma1).^2).*sin(2/3*atan2(y(index_gamma1),x(index_gamma1)));
+        
+        index_gamma1 = find(sqrt(x.^2+y.^2)>=1/4 & sqrt(x.^2+y.^2)<3/4 & y<0);
+        
+        z(index_gamma1) = -(r(index_gamma1)).^(2/3)...
+            .*sin(2/3*(atan2(y(index_gamma1),x(index_gamma1))+2*pi))...
+            .*(1./r(index_gamma1).*(-60*r_new(index_gamma1).^4+120*...
+            r_new(index_gamma1).^3-60*r_new(index_gamma1).^2)+(-480*...
+            r_new(index_gamma1).^3+720*r_new(index_gamma1).^2-240*...
+            r_new(index_gamma1)))-4/3*r(index_gamma1).^(1/3).*(-60*...
+            r_new(index_gamma1).^4+120*r_new(index_gamma1).^3-60*...
+            r_new(index_gamma1).^2).*sin(2/3*(atan2(y(index_gamma1),x(index_gamma1))+2*pi));
+        
+        index_gamma2 = find(sqrt(x.^2+y.^2)>5/4);
+        z(index_gamma2) = -1;
+    end
+fun = @(x,y) my_fun(x,y);
+% loading the exakt data for the given problem
+J_u = -0.5;%-0.592278926839300071734;
 % obstacle function:
 my_obstacle = @(x,y) zeros(size(x))';
 
+
 % initializing the mesh:
+% help = load('triangulation.mat');
+% p = help.p;
+% e = help.e;
+% t = help.t;
 h = 2;
-[p,e,t] = initmesh(data.mygeomg,'Hmax',h);    %square: [-1,1]^2
-%[p,e,t] = refinemesh(data.mysquareg,p,e,t);
+[p,e,t]=initmesh(data.mygeomg,'Hmax',h,'jiggle','on','MesherVersion','R2013a');%square: [-1,1]^2
+[p,e,t] = refinemesh(data.mygeomg,p,e,t);
+[p,e,t] = refinemesh(data.mygeomg,p,e,t);
 
 % initialization of the global values:
 u_S = [];
-itermax = 5;          % maximum iteration depth
-nmax = 5000;          % maximum number of nodes
+itermax = 3;          % maximum iteration depth
+nmax = 2000;          % maximum number of nodes
 eps = 0.01;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate
 theta_osc = 0.3;      % contraction parameter for local contributions of the oscillations
@@ -83,3 +121,5 @@ title('solution of the obstacle problem','FontSize',15)
 figure(4);
 pdeplot(p,e,t,'zdata',u_S);
 title('solution of the obstacle problem','FontSize',15)
+
+end

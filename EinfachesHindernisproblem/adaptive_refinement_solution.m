@@ -1,4 +1,4 @@
-function [u_S,points,edges,triangles,midtri,midpoints,rhoS_plot,IQ_plot, J_error,osc_term,recursion_depth] = adaptive_refinement_solution (points,edges,triangles,solution,load_fun,geo_data,J_exact, max_error,para_rho,para_osc,max_points,max_recursion)
+function [u_S,points,edges,triangles,midtri,midpoints,rhoS_plot,IQ_plot, J_error,osc_term,recursion_depth] = adaptive_refinement_solution (points,edges,triangles,solution,load_fun,obstacle,geo_data,J_exact, max_error,para_rho,para_osc,max_points,max_recursion)
 %ADAPTIVE_REFINEMENT_SOLUTION uses the adaptive refinement strategy shown
 %in chapter 4 and evaluates the solution on a adaptive refined mesh.
 
@@ -22,19 +22,19 @@ while 1
     nmp = size(midpoints,2);
 
     % computation of the functionvalues of the obstacle onto the mesh nodes and midpoints:
-    obstacle = @(x,y) -zeros(size(x))';
     z_obs_prob = obstacle(points(1,:),points(2,:));
     z_obs_midpoints = obstacle(midpoints(1,:),midpoints(2,:));
 
     % assembling of the matrix/vector data and the evaluation of the Dirichlet boundary data: 
     [A,f] = assemble(points,triangles,load_fun,7,'linear');
-    [~,~,H,R]=assemb(geo_data.mysquareb,points,edges);
+    [~,~,H,R]=assemb(geo_data.mygeomb,points,edges);
 
     % solution of the variational inequality with active-set/inner-points-method:
     u_S = sparse(u_S);
     z_obs_prob = sparse(z_obs_prob);
     opts = optimset('Algorithm','interior-point-convex','LargeScale', 'on','Display','off');
     [u_S,J_uS] = quadprog(A,-f,[],[],H,R,z_obs_prob,[],u_S,opts);
+    J_uS
 
     % computing the functionvalues of u_S onto the midpoints:
     u_S_mid = zeros(nmp,1);
@@ -78,7 +78,7 @@ while 1
     refine_triangle = find_triangle_refinement(rho_p,rhoS_glob, osc_local,osc_term(recursion_depth),triangles,para_rho, para_osc,'symmetric');
    
     % refinement of the mesh:
-    [p_h,e_h,t_h,uS_h] = refinemesh(geo_data.mysquareg,points,edges, triangles,u_S,refine_triangle);
+    [p_h,e_h,t_h,uS_h] = refinemesh(geo_data.mygeomg,points,edges, triangles,u_S,refine_triangle);
     
     % termination criterion: if the number of the nodes is too large, no triangle will be refined or the hierarchical error estimator is small enough:
     if (isempty(refine_triangle) || rhoS_glob < max_error || recursion_depth == max_recursion || length(p_h) > max_points)
