@@ -10,16 +10,15 @@ fun = @(x,y) -2*ones(size(x));
 data_exact = load('fval_log_u.mat');
 J_u = data_exact.fval;
 % obstacle function:
-my_obstacle = @(x,y) zeros(size(x))';
+my_obstacle = @(x,y) zeros(size(x));
 
 % initializing the mesh:
 h = 2;
 [p,e,t] = initmesh(data.mygeomg,'Hmax',h);    %square: [-1,1]^2
-%[p,e,t] = refinemesh(data.mysquareg,p,e,t);
 
 % initialization of the global values:
 u_S = [];
-itermax = 30;          % maximum iteration depth
+itermax = 7;          % maximum iteration depth
 nmax = 1000000;          % maximum number of nodes
 eps = 0.001;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate
@@ -27,15 +26,11 @@ theta_osc = 0.2;      % contraction parameter for local contributions of the osc
 
 tic
 % adaptive algorithm:
-<<<<<<< Updated upstream
-[u_S,p,e,t,midtri,midpoints,rhoS_plot,IQ_plot,J_error,osc_term, recursion_depth] = adaptive_refinement_solution(p,e,t,u_S,fun, my_obstacle,data,J_u,eps,theta_rho,theta_osc,nmax,itermax);
-=======
-[u_S,p,e,t,midtri,midpoints,rhoS_plot,IQ_plot,J_error,osc_term, recursion_depth, time] = adaptive_refinement_solution(p,e,t,u_S,fun, data,J_u,eps,theta_rho,theta_osc,nmax,itermax);
->>>>>>> Stashed changes
+[u_S,p,e,t,midtri,midpoints,rhoS_plot,IQ_plot,J_error,osc_term, osc1_term,osc2_term,recursion_depth, degree_of_freedom] = adaptive_refinement_solution(p,e,t,u_S,fun,my_obstacle, data,J_u,eps,theta_rho,theta_osc,nmax,itermax);
 toc
 
 % plot of the mesh with the nodes and midpoints/edges:
-figure(2*itermax+1)
+figure(1)
 subplot(2,1,1);pdemesh(p,e,t);
 title('numbering of the nodes and triangles','FontSize',12);
 
@@ -68,27 +63,30 @@ for i = 1 : length(midpoints)
 end
 
 % plot of the error and the error estimator:
-figure(2*itermax+2);
-plot(1:recursion_depth,J_error,'--o',1:recursion_depth,osc_term,':x',...
-    1:recursion_depth,IQ_plot,'-.*');
-ymin = min([min(J_error),min(IQ_plot),min(osc_term)])-5;
-ymax = max([max(J_error),max(IQ_plot),max(osc_term)])+5;
+figure(2);
+subplot(2,1,1);
+plot(1:recursion_depth,osc1_term,':o',1:recursion_depth,osc2_term, '-.*',1:recursion_depth,osc_term,':x');
+ymin = min([min(osc_term),min(osc1_term),min(osc2_term)])-5;
+ymax = max([max(osc_term),max(osc1_term),max(osc2_term)])+5;
 axis([0.5,recursion_depth+0.5,ymin,ymax]);
-legend('functional error','oscillations','estimated error','location',...
+legend('osc1','osc2','oscillation','location','best');
+
+subplot(2,1,2);
+plot(1:recursion_depth,J_error,'--o',...
+    1:recursion_depth,IQ_plot,'-.*',1:recursion_depth,rhoS_plot,'-.x');
+ymin = min([min(J_error),min(IQ_plot),min(rhoS_plot)])-0.5;
+ymax = max([max(J_error),max(IQ_plot),max(rhoS_plot)])+0.5;
+axis([0.5,recursion_depth+0.5,ymin,ymax]);
+legend('functional error','estimated error','error indicator','location',...
     'best');
 
 % plot of the solution:
 u_S = full(u_S);
 
-<<<<<<< Updated upstream
 figure(3);
 pdeplot(p,e,t,'xydata',u_S,'zdata',u_S,'mesh','on','colormap','jet');
-=======
-figure(2*itermax+3);
-pdeplot(p,e,t,'xydata',u_S,'zdata',u_S,'mesh','on');
->>>>>>> Stashed changes
 title('solution of the obstacle problem','FontSize',15)
 
-figure(2*itermax+4);
+figure(4);
 pdeplot(p,e,t,'zdata',u_S);
 title('solution of the obstacle problem','FontSize',15)

@@ -39,7 +39,7 @@ for i = 1:length(N0_set)
         % transformation from the local onto the global triangle:
         xval = x(1)+(x(2)-x(1)).*xi+(x(3)-x(1)).*eta;
         yval = y(1)+(y(2)-y(1)).*xi+(y(3)-y(1)).*eta;
-        
+
         % evaluating the functionvalues of u_S-psi:
         z = uS_local(1)*phi_P_values(1:m_mesh,:)+uS_local(2)*...
             phi_P_values(1+m_mesh:2*m_mesh,:)+uS_local(3)*...
@@ -63,7 +63,7 @@ for i = 1:length(N0_set)
         if any(z(new_within) <= zero)
             flag_plus = 1;
             
-            z_nodes = uS_local-obstacle(x,y);
+            z_nodes = uS_local-obstacle(x,y)';
             if (all(abs(z_nodes) <= zero) && all(f(index_within)<=0))
                 flag_minus = flag_minus + 1;
             end
