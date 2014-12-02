@@ -1,4 +1,4 @@
-function [u_S,points,edges,triangles,midtri,midpoints,rhoS_plot,IQ_plot, J_error,osc_term,osc1_term,osc2_term,recursion_depth, degree_of_freedom,time_vec] = adaptive_refinement_solution (points,edges,triangles,solution,load_fun,obstacle,geo_data,J_exact, max_error,para_rho,para_osc,max_points,max_recursion)
+function [u_S,points,edges,triangles,midtri,midpoints,rhoS_plot,IQ_plot, J_error,osc_term,osc1_term,osc2_term,recursion_depth, degree_of_freedom,time_vec] = adaptive_refinement_solution (points,edges,triangles,lambda,nu,solution,load_fun_x,load_fun_y,obstacle,geo_data,J_exact, max_error,para_rho,para_osc,max_points,max_recursion)
 %ADAPTIVE_REFINEMENT_SOLUTION uses the adaptive refinement strategy shown
 %in chapter 4 and evaluates the solution on a adaptive refined mesh.
 
@@ -20,29 +20,43 @@ while 1
     % further initializations:
     np = size(points,2);
     degree_of_freedom(recursion_depth) = np;
+
+    % assembling of the matrix/vector data and the evaluation of the Dirichlet boundary data: 
+    [A,f] = assemble(points,triangles,load_fun_x,load_fun_y,lambda,nu,7,'linear');
+    [~,~,H,~]=assemb(geo_data.mygeomb,points,edges);
+   
+    % evaluate the boundary indices and conditions:
+    [~,boundary_ind] = find(H(:,1:np));
+    [gamma_D,gamma_N,gamma_C] = boundary_disjunction(boundary_ind,points)
+    
+    num_of_dirichlet_points = length(gamma_D);
+    adjacency_D = sparse(2*num_of_dirichlet_points,2*np);
+    for i = 1:num_of_dirichlet_points
+        adjacency_D(2*i-1:2*i,2*gamma_D(i)-1:2*gamma_D(i)) = eye(2);
+    end
+    dirichlet_bound = sparse(2*num_of_dirichlet_points,1);
+    
+    
     
     % evaluation of the midpoints:
     [midpoints,midtri] = midpoints_of_triangle(triangles,points);
     nmp = size(midpoints,2);
+    points(:,gamma_C)
 
     % computation of the functionvalues of the obstacle onto the mesh nodes and midpoints:
-    z_obs_prob = obstacle(points(1,:),points(2,:));
-    z_obs_midpoints = obstacle(midpoints(1,:),midpoints(2,:));
+    z_obs_prob = obstacle(points(1,gamma_C),points(2,gamma_C))
+    z_obs_midpoints = obstacle(midpoints(1,gamma_C),midpoints(2,gamma_C)) % hier fehlt noch neue zuordnung!!!!
     
     if size(z_obs_prob,1) == 1
         z_obs_prob = z_obs_prob';
         z_obs_midpoints = z_obs_midpoints';
     end
 
-    % assembling of the matrix/vector data and the evaluation of the Dirichlet boundary data: 
-    [A,f] = assemble(points,triangles,load_fun,7,'linear');
-    [~,~,H,R]=assemb(geo_data.mygeomb,points,edges);
-
     % solution of the variational inequality with active-set/inner-points-method:
     u_S = sparse(u_S);
     z_obs_prob = sparse(z_obs_prob);
     opts = optimset('Algorithm','interior-point-convex','LargeScale', 'on','Display','off');
-    [u_S,J_uS] = quadprog(A,-f,[],[],H,R,z_obs_prob,[],u_S,opts);
+    [u_S,J_uS] = quadprog(A,-f,B,-z_obs_prob,adjacency_D,dirichlet_bound,[],[],u_S,opts);
     
     % computing the functionvalues of u_S onto the midpoints:
     u_S_mid = zeros(nmp,1);
@@ -107,7 +121,7 @@ end
 % elimination of the zeros in the vectors of the error/-estimator:
 rhoS_plot = rhoS_plot(1:recursion_depth);
 IQ_plot = IQ_plot(1:recursion_depth);
-J_error = J_error(1:recursion_depth);
+J_error = J_uS;%J_error(1:recursion_depth);
 osc_term = osc_term(1:recursion_depth);
 osc1_term = osc1_term(1:recursion_depth);
 osc2_term = osc2_term(1:recursion_depth);

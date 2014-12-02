@@ -1,4 +1,4 @@
-function [J_error,rhoS_plot,IQ_plot,degree_of_freedom,time] = start_example2
+function start_example3
 
 clear 
 clear all 
@@ -20,7 +20,7 @@ data = load('mylshape.mat');
             .*(1./r(index_gamma1).*(-60*r_new(index_gamma1).^4+120*...
             r_new(index_gamma1).^3-60*r_new(index_gamma1).^2)+(-480*...
             r_new(index_gamma1).^3+720*r_new(index_gamma1).^2-240*...
-            r_new(index_gamma1)))-4/3*r(index_gamma1).^(1/3).*(-60*...
+            r_new(index_gamma1)))-4/3*r(index_gamma1).^(-1/3).*(-60*...
             r_new(index_gamma1).^4+120*r_new(index_gamma1).^3-60*...
             r_new(index_gamma1).^2).*sin(2/3*atan2(y(index_gamma1), x(index_gamma1)));
         
@@ -31,19 +31,30 @@ data = load('mylshape.mat');
             .*(1./r(index_gamma1).*(-60*r_new(index_gamma1).^4+120*...
             r_new(index_gamma1).^3-60*r_new(index_gamma1).^2)+(-480*...
             r_new(index_gamma1).^3+720*r_new(index_gamma1).^2-240*...
-            r_new(index_gamma1)))-4/3*r(index_gamma1).^(1/3).*(-60*...
+            r_new(index_gamma1)))-4/3*r(index_gamma1).^(-1/3).*(-60*...
             r_new(index_gamma1).^4+120*r_new(index_gamma1).^3-60*...
             r_new(index_gamma1).^2).*sin(2/3*(atan2(y(index_gamma1), x(index_gamma1))+2*pi));
         
         index_gamma2 = find(sqrt(x.^2+y.^2)>5/4);
         z(index_gamma2) = -1;
+        
+        z = -z;
     end
 fun = @(x,y) my_fun(x,y);
 % loading the exakt data for the given problem
-J_u = -0.5;%-0.592278926839300071734;
+J_u = -0.5;
 % obstacle function:
-my_obstacle = @(x,y) zeros(size(x));
-
+    function z = obs_fun(x,y)
+        [m,n] = size(x);
+        z = zeros(m,n);
+        
+        for k = 1:m
+            for l = 1:n
+                z(k,l) = -0.5*(2.01-min([2-x(k,l);2+x(k,l); 2+y(k,l);2-y(k,l)]));
+            end
+        end
+    end
+my_obstacle = @(x,y) obs_fun(x,y);
 
 % initializing the mesh:
 h = 2;
@@ -54,8 +65,8 @@ h = 2;
 % initialization of the global values:
 u_S = [];
 itermax = 7;          % maximum iteration depth
-nmax = 25000;          % maximum number of nodes
-eps = 0.01;           % upper bound for the hierarchical error estimate
+nmax = 20000;          % maximum number of nodes
+eps = 0.001;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate
 theta_osc = 0.3;      % contraction parameter for local contributions of the oscillations
 
@@ -63,6 +74,10 @@ tic
 % adaptive algorithm:
 [u_S,p,e,t,midtri,midpoints,rhoS_plot,IQ_plot,J_error,osc_term, osc1_term,osc2_term,recursion_depth,degree_of_freedom,time] = adaptive_refinement_solution(p,e,t,u_S,fun,my_obstacle, data,J_u,eps,theta_rho,theta_osc,nmax,itermax);
 toc
+
+format long
+J_error
+
 
 % plot of the mesh with the nodes and midpoints/edges:
 figure(1)
@@ -117,14 +132,14 @@ legend('functional error','estimated error','error indicator','location',...
     'best');
 
 % plot of the solution:
-u_S = full(u_S);
+u_S = full(-u_S);
 
-figure(3);
-pdeplot(p,e,t,'xydata',u_S,'zdata',u_S,'mesh','on','colormap', 'jet','colorbar','off');
-title('solution of the obstacle problem','FontSize',15)
+figure(8);
+pdeplot(p,e,t,'xydata',u_S,'zdata',u_S,'mesh','on','colormap','jet','colorbar','off');
+%title('solution of the obstacle problem','FontSize',15)
 
-figure(4);
+figure(9);
 pdeplot(p,e,t,'zdata',u_S);
-title('solution of the obstacle problem','FontSize',15)
+%title('solution of the obstacle problem','FontSize',15)
 
 end

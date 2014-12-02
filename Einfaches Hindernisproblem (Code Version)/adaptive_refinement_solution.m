@@ -107,7 +107,7 @@ end
 % elimination of the zeros in the vectors of the error/-estimator:
 rhoS_plot = rhoS_plot(1:recursion_depth);
 IQ_plot = IQ_plot(1:recursion_depth);
-J_error = J_error(1:recursion_depth);
+J_error = J_uS;%J_error(1:recursion_depth);
 osc_term = osc_term(1:recursion_depth);
 osc1_term = osc1_term(1:recursion_depth);
 osc2_term = osc2_term(1:recursion_depth);

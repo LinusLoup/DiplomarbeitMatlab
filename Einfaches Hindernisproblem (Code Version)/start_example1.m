@@ -18,7 +18,7 @@ h = 2;
 
 % initialization of the global values:
 u_S = [];
-itermax = 5;          % maximum iteration depth
+itermax = 2;          % maximum iteration depth
 nmax = 1000000;          % maximum number of nodes
 eps = 0.001;           % upper bound for the hierarchical error estimate
 theta_rho = 0.4;      % contraction parameter for local contributions of the error estimate
@@ -84,9 +84,9 @@ legend('functional error','estimated error','error indicator','location',...
 u_S = full(u_S);
 
 figure(3);
-pdeplot(p,e,t,'xydata',u_S,'zdata',u_S,'mesh','on','colormap', 'jet','colorbar','off');
-title('solution of the obstacle problem','FontSize',15)
+pdeplot(p,e,t,'xydata',u_S,'zdata',u_S,'mesh','on','colormap','jet','colorbar','off');
+%title('solution of the obstacle problem','FontSize',15)
 
 figure(4);
 pdeplot(p,e,t,'zdata',u_S);
-title('solution of the obstacle problem','FontSize',15)
+%title('solution of the obstacle problem','FontSize',15)

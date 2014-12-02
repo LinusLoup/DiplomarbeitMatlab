@@ -19,7 +19,8 @@ switch lower(option)
     % local stiffness matrix for linear shape functions:
     S = [ a/2+b+c/2, -a/2-b/2, -b/2-c/2;
         -a/2-b/2,    a/2,      b/2;
-        -b/2-c/2,    b/2,      c/2     ];   
+        -b/2-c/2,    b/2,      c/2     ];
+    
     case {'bubble'}
     % local stiffness matrix for quadratic shape functions:
     S_quad = 4/3* [ a+b+c, -b-c, b;
@@ -34,11 +35,13 @@ switch lower(option)
     % f_local:
     f_local = -(a*gradu_S(1)+b*gradu_S(2))*[0; 2/3; -2/3]...
         -(b*gradu_S(1)+c*gradu_S(2))*[-2/3; 2/3; 0];
+    
     case {'quadratic'}
     % local stiffness matrix for quadratic shape functions:
     S = 4/3* [ a+b+c, -b-c, b;
                -b-c,  a+b+c, -a-b;
-                 b,    -a-b, a+b+c ];        
+                 b,    -a-b, a+b+c ];
+        
     otherwise
         error('Unknown option');
 end

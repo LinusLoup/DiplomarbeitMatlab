@@ -12,6 +12,11 @@ phi_E = @(xi,eta) [4*xi.*(1-xi-eta); 4*xi.*eta; 4*eta.*(1-xi-eta)];
 % Evaluation of the weights and values of the function for the surface integral:
 [wi,~,phi_E_values] = quad_tri([0,1,0;0,0,1],phi_E,7);
 [~,~,phi_P_values] = quad_tri([0,1,0;0,0,1],phi_P,7);
+        
+% local weights and nodes for the Gauss quadrature for the line integral:
+nodes_local = [-sqrt(1/3),sqrt(1/3)];
+phiPE_local = @(xi) (xi+1)/2.*(-xi.^2+1);
+local_phiPE_int = sum(phiPE_local(nodes_local));
 
 for k = 1:np
     % Ordering triangle <-> reference function and support of phi_P:
@@ -49,7 +54,7 @@ for k = 1:np
             
             % affin transformation of the local integral on the global edge by multiplication of the jacobian:
             laenge = norm(edge_poi(:,1)-edge_poi(:,2));
-            global_phiPE_int = 1/3*laenge;
+            global_phiPE_int = local_phiPE_int*1/2*laenge;
             
             % determination of the functionvalues of eps_V(x_E):
             epsV_loc = eps_V(E_p(i));
