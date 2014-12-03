@@ -59,7 +59,7 @@ lambda = nu.*E./((1+nu).*(1-2*nu));
 mu = E./(2.*(1+nu));
 
 % initializing the mesh:
-h = 0.5;
+h = 0.05;
 [p,e,t] = initmesh(data.mygeomg,'Hmax',h,'MesherVersion','R2013a');
 
 % plot of the mesh with the nodes and midpoints/edges:
