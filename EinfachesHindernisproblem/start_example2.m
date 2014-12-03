@@ -40,7 +40,7 @@ data = load('mylshape.mat');
     end
 fun = @(x,y) my_fun(x,y);
 % loading the exakt data for the given problem
-J_u = -0.5;%-0.592278926839300071734;
+J_u = -0.5;
 % obstacle function:
 my_obstacle = @(x,y) zeros(size(x));
 
@@ -53,9 +53,9 @@ h = 2;
 
 % initialization of the global values:
 u_S = [];
-itermax = 7;          % maximum iteration depth
+itermax = 3;          % maximum iteration depth
 nmax = 25000;          % maximum number of nodes
-eps = 0.01;           % upper bound for the hierarchical error estimate
+eps = 0.001;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate
 theta_osc = 0.3;      % contraction parameter for local contributions of the oscillations
 
