@@ -87,10 +87,10 @@ while 1
     refine_triangle = find_triangle_refinement(rho_p,rhoS_glob, osc_local,osc_term(recursion_depth),triangles,para_rho, para_osc,'symmetric');
     
     % refinement of the mesh:
-    [p_h,e_h,t_h,uS_h] = refinemesh(geo_data.mygeomg,points,edges, triangles,u_S,refine_triangle);
+    [p_h,e_h,t_h,uS_h] = refinemesh(geo_data.mygeomg,points,edges, triangles,u_S);%,refine_triangle);
     
     % termination criterion: if the number of the nodes is too large, no triangle will be refined or the hierarchical error estimator is small enough:
-    if (isempty(refine_triangle) || rhoS_glob < max_error || recursion_depth == max_recursion || length(p_h) > max_points)
+    if (rhoS_glob < max_error || recursion_depth == max_recursion || length(p_h) > max_points || isempty(refine_triangle))
         length(p_h)
         fprintf('%s %f.\n','Die Rekursionstiefe ist ', recursion_depth);
         break;

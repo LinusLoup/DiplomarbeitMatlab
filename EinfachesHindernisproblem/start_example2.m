@@ -48,13 +48,18 @@ my_obstacle = @(x,y) zeros(size(x));
 % initializing the mesh:
 h = 2;
 [p,e,t]=initmesh(data.mygeomg,'Hmax',h,'jiggle','on','MesherVersion', 'R2013a');
-[p,e,t] = refinemesh(data.mygeomg,p,e,t);
-[p,e,t] = refinemesh(data.mygeomg,p,e,t);
+% [p,e,t] = refinemesh(data.mygeomg,p,e,t);
+% [p,e,t] = refinemesh(data.mygeomg,p,e,t);
 
 % initialization of the global values:
 u_S = [];
+<<<<<<< HEAD
 itermax = 3;          % maximum iteration depth
 nmax = 25000;          % maximum number of nodes
+=======
+itermax = 11;          % maximum iteration depth
+nmax = 1000;          % maximum number of nodes
+>>>>>>> FETCH_HEAD
 eps = 0.001;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate
 theta_osc = 0.3;      % contraction parameter for local contributions of the oscillations
