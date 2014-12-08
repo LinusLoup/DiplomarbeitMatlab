@@ -2,7 +2,7 @@ function j_E = normal_flux(E_p,given_flag,nodes,triangles,edges, edge_triangles,
 %NORMAL_FLUX computes the normal flux for all given edges E \in E_p. The other given objects are: The nodes of the triangulation, the indices of the triangles-nodes ordering, the midpoints/edges-matrix edges, the edges-triangle-ordering edge_triangle and the functionvalues of the Galerkin solution uS_values.
 
 % Initializing:
-j_E = zeros(2,size(E_p));
+j_E = zeros(2,size(E_p,2));
     
 % Evaluate the neigbours of all edges in the edges-set E_p:
 [neighbours,flag] = neighbourhood(E_p,edge_triangles,'edges');

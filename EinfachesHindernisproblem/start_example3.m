@@ -1,4 +1,4 @@
-function [J_error,rhoS_plot,IQ_plot,degree_of_freedom,time] = start_example3
+function [J_error,rhoS_plot,IQ_plot,osc_term,osc1_term,osc2_term,degree_of_freedom,time] = start_example3
 
 clear 
 clear all 
@@ -42,7 +42,7 @@ data = load('mylshape.mat');
     end
 fun = @(x,y) my_fun(x,y);
 % loading the exakt data for the given problem
-J_u = -0.5;
+J_u = 0;
 % obstacle function:
     function z = obs_fun(x,y)
         [m,n] = size(x);
@@ -64,9 +64,9 @@ h = 2;
 
 % initialization of the global values:
 u_S = [];
-itermax = 7;          % maximum iteration depth
-nmax = 1000;          % maximum number of nodes
-eps = 0.001;           % upper bound for the hierarchical error estimate
+itermax = 9;          % maximum iteration depth
+nmax = 150000;          % maximum number of nodes
+eps = 0.0001;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate
 theta_osc = 0.3;      % contraction parameter for local contributions of the oscillations
 

@@ -53,7 +53,7 @@ h = 2;
 
 % initialization of the global values:
 u_S = [];
-itermax = 7;          % maximum iteration depth
+itermax = 5;          % maximum iteration depth
 nmax = 25000;          % maximum number of nodes
 eps = 0.01;           % upper bound for the hierarchical error estimate
 theta_rho = 0.3;      % contraction parameter for local contributions of the error estimate
