@@ -1,5 +1,11 @@
-function [u_S,points,edges,triangles,rhoS_plot,IQ_plot, J_error,recursion_depth, degree_of_freedom,time_vec] = adaptive_refinement_solution (points,edges,triangles,lambda,mu,solution,vol_load_fun_x, vol_load_fun_y,surf_load_fun_x,surf_load_fun_y,node_load,obstacle, geo_data,J_exact,max_error,para_rho,max_points,max_recursion)
-%ADAPTIVE_REFINEMENT_SOLUTION uses the adaptive refinement strategy shown in chapter 4 and evaluates the solution on a adaptive refined mesh.
+function [u_S,points,edges,triangles,rhoS_plot,IQ_plot,J_error,...
+    recursion_depth,degree_of_freedom,time_vec] = ...
+    adaptive_refinement_solution (points,edges,triangles,lambda,mu,...
+    solution,vol_load_fun_x, vol_load_fun_y,surf_load_fun_x,...
+    surf_load_fun_y,node_load,obstacle, geo_data,J_exact,max_error,...
+    para_rho,max_points,max_recursion)
+%ADAPTIVE_REFINEMENT_SOLUTION uses the adaptive refinement strategy shown 
+%in chapter 4 and evaluates the solution on a adaptive refined mesh.
 
 % initializing all local values:
 u_S = solution;
@@ -40,14 +46,18 @@ while 1
         end
     end
     
-    % assembling of the matrix/vector data and the evaluation of the Dirichlet boundary data: 
-    [A,f] = assemble(points,edges,triangles,vol_load_fun_x, vol_load_fun_y,surf_load_fun_x,surf_load_fun_y,node_load, gamma_N,lambda,mu,7,'linear');
+    % assembling of the matrix/vector data and the evaluation of the 
+    % Dirichlet boundary data: 
+    [A,f] = assemble(points,edges,triangles,vol_load_fun_x,...
+        vol_load_fun_y,surf_load_fun_x,surf_load_fun_y,node_load,...
+        gamma_N,lambda,mu,7,'linear');
     
     % evaluation of the midpoints:
     [midpoints,midtri] = midpoints_of_triangle(triangles,points);
     nmp = size(midpoints,2);
 
-    % computation of the functionvalues of the obstacle onto the mesh nodes and midpoints:
+    % computation of the functionvalues of the obstacle onto the mesh 
+    % nodes and midpoints:
     z_obs_prob = obstacle(points(1,gamma_C),points(2,gamma_C));
     
     contact_midpoints = zeros(5,num_of_contact_points-1);
@@ -69,8 +79,10 @@ while 1
     % solution of the variational inequality with active-set/inner-points-method:
     u_S = sparse(u_S);
     z_obs_prob = sparse(z_obs_prob);
-    opts = optimset('Algorithm','interior-point-convex','LargeScale', 'on','Display','off');
-    [u_S,J_uS] = quadprog(A,-f,B,z_obs_prob,adjacency_D,dirichlet_bound, [],[],u_S,opts);
+    opts = optimset('Algorithm','interior-point-convex','LargeScale',...
+        'on','Display','off');
+    [u_S,J_uS] = quadprog(A,-f,B,z_obs_prob,adjacency_D,dirichlet_bound,...
+        [],[],u_S,opts);
     
     my_uS = zeros(2*np,1);
     for i = 1:np
@@ -92,14 +104,19 @@ while 1
         index = contact_midpoints([3,4],j);
          
         if contact_midpoints(2,j)>0
-            u_S_mid(j) = [(u_S(2*index(1)-1)+u_S(2*index(2)-1))/2, (u_S(2*index(1))+u_S(2*index(2)))/2]*[0; -1/2];
+            u_S_mid(j) = [(u_S(2*index(1)-1)+u_S(2*index(2)-1))/2,...
+                (u_S(2*index(1))+u_S(2*index(2)))/2]*[0; -1/2];
         else
-            u_S_mid(j) = [(u_S(2*index(1)-1)+u_S(2*index(2)-1))/2, (u_S(2*index(1))+u_S(2*index(2)))/2]*[0; 1/2];
+            u_S_mid(j) = [(u_S(2*index(1)-1)+u_S(2*index(2)-1))/2,...
+                (u_S(2*index(1))+u_S(2*index(2)))/2]*[0; 1/2];
         end
     end
     
-    % the solution of the local defect problem by assembling the matrix with the bubble functions and using the equations in (4.10) and (4.11):
-    [A_Q,rhoS_phiE] = assemble(points,edges,triangles,vol_load_fun_x,vol_load_fun_y, surf_load_fun_x,surf_load_fun_y,node_load,gamma_N,lambda,mu,7, 'bubble',u_S);
+    % the solution of the local defect problem by assembling the matrix 
+    % with the bubble functions and using the equations in (4.10) and (4.11):
+    [A_Q,rhoS_phiE] = assemble(points,edges,triangles,vol_load_fun_x,...
+        vol_load_fun_y, surf_load_fun_x,surf_load_fun_y,node_load,...
+        gamma_N,lambda,mu,7, 'bubble',u_S);
     
     % the contact condition for the solution auf the local defect problem:
     B_Q = zeros(num_of_contact_points-1,2*nmp);
@@ -111,9 +128,11 @@ while 1
             B_Q(j,2*contact_midpoints(5,j)-1:2*contact_midpoints(5,j)) = [0,1/2];
         end
     end
-    [eps_V,~] = quadprog(A_Q,-rhoS_phiE,B_Q,z_obs_midpoints+u_S_mid, [],[],[],[],[],opts);
+    [eps_V,~] = quadprog(A_Q,-rhoS_phiE,B_Q,z_obs_midpoints+u_S_mid,...
+        [],[],[],[],[],opts);
     
-    % the hierarchical error estimator: evaluation of rho_S(eps_V) with the equation beyond (4.68):
+    % the hierarchical error estimator: evaluation of rho_S(eps_V) with the
+    % equation beyond (4.68):
     rhoS_glob = eps_V'*rhoS_phiE;
     rhoS_plot(recursion_depth) = rhoS_glob;
 
@@ -124,16 +143,23 @@ while 1
     J_error(recursion_depth) = J_uS-J_u;
 
     % evaluating the local contributions of rho_S with Lemma 4.14:
-    rho_p = eval_rho_p(points,triangles,edges,midpoints,midtri,u_S, eps_V,vol_load_fun_x, vol_load_fun_y,surf_load_fun_x,surf_load_fun_y, node_load,gamma_N,lambda,mu);
+    rho_p = eval_rho_p(points,triangles,edges,midpoints,midtri,u_S,...
+        eps_V,vol_load_fun_x, vol_load_fun_y,surf_load_fun_x,...
+        surf_load_fun_y, node_load,gamma_N,lambda,mu);
     
     % calculating the indices of the triangles, which have to be refined:
-    refine_triangle = find_triangle_refinement(rho_p,rhoS_glob, triangles,para_rho,'symmetric');
+    refine_triangle = find_triangle_refinement(rho_p,rhoS_glob,...
+        triangles,para_rho,'symmetric');
     
     % refinement of the mesh:
-    [p_h,e_h,t_h,uS_h] = refinemesh(geo_data.mygeomg,points,edges, triangles,u_S,refine_triangle);
+    [p_h,e_h,t_h,uS_h] = refinemesh(geo_data.mygeomg,points,edges,...
+        triangles,u_S,refine_triangle);
    
-    % termination criterion: if the number of the nodes is too large, no triangle will be refined or the hierarchical error estimator is small enough:
-    if (isempty(refine_triangle) || rhoS_glob < max_error || recursion_depth == max_recursion || length(p_h) > max_points)
+    % termination criterion: if the number of the nodes is too large, no 
+    % triangle will be refined or the hierarchical error estimator is small 
+    % enough:
+    if (isempty(refine_triangle) || rhoS_glob < max_error || ...
+            recursion_depth == max_recursion || length(p_h) > max_points)
         u_S = point_shift;
         fprintf('%s %f.\n','Die Rekursionstiefe ist ', recursion_depth);
         break;

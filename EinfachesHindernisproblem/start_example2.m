@@ -1,4 +1,4 @@
-function [J_error,rhoS_plot,IQ_plot,degree_of_freedom,time] = start_example2
+function [J_error,rhoS_plot,IQ_plot,osc_term,osc1_term,osc2_term, degree_of_freedom,time] = start_example2
 
 clear 
 clear all 
@@ -40,7 +40,7 @@ data = load('mylshape.mat');
     end
 fun = @(x,y) my_fun(x,y);
 % loading the exakt data for the given problem
-J_u = -0.5;%-0.592278926839300071734;
+J_u = -0.5;
 % obstacle function:
 my_obstacle = @(x,y) zeros(size(x));
 

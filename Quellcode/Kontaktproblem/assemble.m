@@ -1,4 +1,6 @@
-function [A,f] = assemble(points,edges,triangle,vol_load_x, vol_load_y,surf_load_x,surf_load_y,node_load,neumann_points,lambda, mu,num_of_nodes,option,u_S)
+function [A,f] = assemble(points,edges,triangle,vol_load_x,vol_load_y,...
+    surf_load_x,surf_load_y,node_load,neumann_points,lambda,mu,...
+    num_of_nodes,option,u_S)
 %ASSEMBLE evaluates the global matrix A and load vector f out of the given nodes, triangles, loadfunctions, Neumann-point indices, Lame-constants, number of nodes and the Galerkin approximation u_S.
 
 % ordering: triangles <-> midpoints:
@@ -82,11 +84,19 @@ for i = 1:nt
 
         for k = 1:3
             if edges(1,edge_ind) == poi_ind(k)
-                fl(2*k-1) = fl(2*k-1)+J_edge*sum(wi_edge.* surf_load_x(gauss_edge(1,:),gauss_edge (2,:)).*ansatz_val_edge(1,:));
-                fl(2*k) = fl(2*k)+J_edge*sum(wi_edge.* surf_load_y(gauss_edge(1,:),gauss_edge (2,:)).*ansatz_val_edge(1,:));
+                fl(2*k-1) = fl(2*k-1)+J_edge*sum(wi_edge.*...
+                    surf_load_x(gauss_edge(1,:),gauss_edge (2,:))...
+                    .*ansatz_val_edge(1,:));
+                fl(2*k) = fl(2*k)+J_edge*sum(wi_edge.*...
+                    surf_load_y(gauss_edge(1,:),gauss_edge (2,:))...
+                    .*ansatz_val_edge(1,:));
             else
-                fl(2*k-1) = fl(2*k-1)+J_edge*sum(wi_edge.* surf_load_x(gauss_edge(1,:),gauss_edge (2,:)).*ansatz_val_edge(2,:));
-                fl(2*k) = fl(2*k)+J_edge*sum(wi_edge.* surf_load_y(gauss_edge(1,:),gauss_edge (2,:)).*ansatz_val_edge(2,:));
+                fl(2*k-1) = fl(2*k-1)+J_edge*sum(wi_edge.*...
+                    surf_load_x(gauss_edge(1,:),gauss_edge (2,:))...
+                    .*ansatz_val_edge(2,:));
+                fl(2*k) = fl(2*k)+J_edge*sum(wi_edge.*...
+                    surf_load_y(gauss_edge(1,:),gauss_edge (2,:))...
+                    .*ansatz_val_edge(2,:));
             end
         end
     end
@@ -94,7 +104,9 @@ for i = 1:nt
     % assembling into the global stiffness matrix A and the load vector f:
     for k = 1:3
         for l = 1:3
-            A(2*tri(k)-1:2*tri(k),2*tri(l)-1:2*tri(l)) = A(2*tri(k)-1:2*tri(k),2*tri(l)-1:2*tri(l)) + S(2*k-1:2*k,2*l-1:2*l);
+            A(2*tri(k)-1:2*tri(k),2*tri(l)-1:2*tri(l)) = ...
+                A(2*tri(k)-1:2*tri(k),2*tri(l)-1:2*tri(l)) + ...
+                S(2*k-1:2*k,2*l-1:2*l);
         end
     
         f(2*tri(k)-1:2*tri(k)) = f(2*tri(k)-1:2*tri(k))+fl(2*k-1:2*k);
@@ -106,5 +118,6 @@ switch lower(option)
     case {'bubble','quadratic'}
         points = midpoints;
 end
-f(2*neumann_ind) = f(2*neumann_ind) + node_load(points(1,neumann_ind),points(2,neumann_ind))';
+f(2*neumann_ind) = f(2*neumann_ind) + node_load(points(1,neumann_ind),...
+    points(2,neumann_ind))';
 end

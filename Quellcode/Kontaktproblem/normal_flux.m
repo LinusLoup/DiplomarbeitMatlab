@@ -1,5 +1,9 @@
 function j_E = normal_flux(E_p,given_flag,nodes,triangles,edges, edge_triangles,uS_values,lambda,mu)
-%NORMAL_FLUX computes the stress normal flux for all given edges E in E_p. The other given objects are: The nodes of the triangulation, the indices of the triangles-nodes ordering, the midpoints/edges-matrix edges, the edges-triangle-ordering edge_triangle and the functionvalues of the Galerkin solution uS_values. Also given are the Lame-constants.
+%NORMAL_FLUX computes the stress normal flux for all given edges E in E_p. 
+%The other given objects are: The nodes of the triangulation, the indices 
+%of the triangles-nodes ordering, the midpoints/edges-matrix edges, the 
+%edges-triangle-ordering edge_triangle and the functionvalues of the 
+%Galerkin solution uS_values. Also given are the Lame-constants.
 
 % Initializing:
 j_E = zeros(2,size(E_p,2));
@@ -20,7 +24,8 @@ for k = 1:length(E_p)
     p_T1 = p_T(:,1:3);
     p_T2 = p_T(:,4:6);
     
-        % The calculated u_S values onto T_1 and T_2, where the first three rows are x-coordinates and the last three the y-coordinates:
+        % The calculated u_S values onto T_1 and T_2, where the first three 
+        % rows are x-coordinates and the last three the y-coordinates:
     uS_T1 = uS_values([2*neigh_tri(:,1)-1,2*neigh_tri(:,1)]);
             
     if flag(k) == 0

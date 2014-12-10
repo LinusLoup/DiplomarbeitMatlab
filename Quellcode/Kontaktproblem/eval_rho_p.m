@@ -1,5 +1,11 @@
-function rho_p = eval_rho_p(nodes,triangles,edges,midpoints,midtri,u_S, eps_V,vol_load_x,vol_load_y,surf_load_x,surf_load_y,node_load, neumann_ind,lambda,mu)
-%EVAL_RHO_P evaluates the local contribution rho_P of rho_S, given the nodes, triangles, midpoints of the edges (of the triangles) and die midpoints-triangle-ordering (midtri). Also it is given the solution auf die local defect problem eps_V and the function fun, which is part of the integral in rho_S. u_S are, as always, the Galerkin solution.
+function rho_p = eval_rho_p(nodes,triangles,edges,midpoints,midtri,u_S,...
+    eps_V,vol_load_x,vol_load_y,surf_load_x,surf_load_y,node_load,...
+    neumann_ind,lambda,mu)
+%EVAL_RHO_P evaluates the local contribution rho_P of rho_S, given the 
+% nodes, triangles, midpoints of the edges (of the triangles) and die 
+% midpoints-triangle-ordering (midtri). Also it is given the solution auf 
+% die local defect problem eps_V and the function fun, which is part of 
+% the integral in rho_S. u_S are, as always, the Galerkin solution.
 
 % Initializing:
 np = size(nodes,2);
@@ -35,7 +41,8 @@ for k = 1:np
         phi_Pl_values = phi_P_values(phi_p_local(j),:);
         % evaluation of the first integral of rho_p:
         rho_p(k) = rho_p(k) + J * (sum(wi.*vol_load_x(gauss(1,:),gauss(2,:)).*...
-            (eps_V_local_x'*phi_E_values).*(phi_Pl_values)) + sum(wi.*vol_load_y(gauss(1,:),gauss(2,:)).*...
+            (eps_V_local_x'*phi_E_values).*(phi_Pl_values)) + ...
+            sum(wi.*vol_load_y(gauss(1,:),gauss(2,:)).*...
             (eps_V_local_y'*phi_E_values).*(phi_Pl_values)));
     end
                
@@ -45,14 +52,16 @@ for k = 1:np
         [~,E_p] = find(midpoints(3:4,:)==k);
         flag = midpoints(2,E_p);
         % Evaluation of the normal-fluxes j_E for all edges in E_p:
-        j_E = normal_flux(E_p,flag,nodes,triangles,midpoints,midtri,u_S, lambda,mu);
+        j_E = normal_flux(E_p,flag,nodes,triangles,midpoints,midtri,u_S,...
+            lambda,mu);
 
         for i = 1:length(E_p)    
             % evaluating the points of the edges:
             edge_poi_ind = midpoints(3:4,E_p(i));
             edge_poi = nodes(:,edge_poi_ind);
             
-            % affin transformation of the local integral on the global edge by multiplication of the jacobian:
+            % affin transformation of the local integral on the global 
+            % edge by multiplication of the jacobian:
             laenge = norm(edge_poi(:,1)-edge_poi(:,2));
             global_phiPE_int = 1/3*laenge;
             
@@ -65,7 +74,8 @@ for k = 1:np
             % Evaluation of the boundary integral over gamma_sigma:
             if prod(ismember(edge_poi_ind,neumann_ind)) == 1
                 edge_ind = find(prod(ismember(edges(1:2,:), edge_poi_ind)));
-                [wi_edge,gauss_edge,J_edge,ansatz_val_edge] = quad_edge(edge_poi,hat_edge,5);
+                [wi_edge,gauss_edge,J_edge,ansatz_val_edge] = quad_edge...
+                    (edge_poi,hat_edge,5);
                 
                 % Gauss-points and local contributions of eps_V:
                 [~,~,~,ansatz_val_E_edge] = quad_edge(edge_poi,@(xi) (1-xi.^2),5);
@@ -73,13 +83,21 @@ for k = 1:np
                 eps_V_local_y = eps_V(2*E_p(i));
                 
                 if edges(1,edge_ind) == k
-                    rho_p(k) = rho_p(k)+J_edge*(sum(wi_edge.*surf_load_x (gauss_edge(1,:),gauss_edge(2,:)).*...
-                            (eps_V_local_x*ansatz_val_E_edge) .*ansatz_val_edge(1,:)) + sum(wi_edge.*surf_load_y (gauss_edge(1,:),gauss_edge(2,:)).*...
-                            (eps_V_local_y*ansatz_val_E_edge) .*ansatz_val_edge(1,:)));
+                    rho_p(k) = rho_p(k)+J_edge*(sum(wi_edge.*surf_load_x ...
+                        (gauss_edge(1,:),gauss_edge(2,:)).*...
+                            (eps_V_local_x*ansatz_val_E_edge)...
+                            .*ansatz_val_edge(1,:)) + sum(wi_edge...
+                            .*surf_load_y (gauss_edge(1,:),gauss_edge(2,:)).*...
+                            (eps_V_local_y*ansatz_val_E_edge)...
+                            .*ansatz_val_edge(1,:)));
                 else
-                    rho_p(k) = rho_p(k)+J_edge*(sum(wi_edge.*surf_load_x (gauss_edge(1,:),gauss_edge(2,:)).*...
-                            (eps_V_local_x*ansatz_val_E_edge) .*ansatz_val_edge(2,:)) + sum(wi_edge.*surf_load_y (gauss_edge(1,:),gauss_edge(2,:)).*...
-                            (eps_V_local_y*ansatz_val_E_edge) .*ansatz_val_edge(2,:)));
+                    rho_p(k) = rho_p(k)+J_edge*(sum(wi_edge.*surf_load_x...
+                        (gauss_edge(1,:),gauss_edge(2,:)).*...
+                            (eps_V_local_x*ansatz_val_E_edge) ...
+                            .*ansatz_val_edge(2,:)) + sum(wi_edge...
+                            .*surf_load_y (gauss_edge(1,:),gauss_edge(2,:)).*...
+                            (eps_V_local_y*ansatz_val_E_edge)...
+                            .*ansatz_val_edge(2,:)));
                 end
             end
         end
